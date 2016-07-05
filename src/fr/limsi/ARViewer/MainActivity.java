@@ -98,10 +98,6 @@ public class MainActivity extends BaseARActivity
     private static final boolean DEBUG = Config.DEBUG;
 
     private ImageButton tangibleBtn ;
-    private Button constrainXBtn ;
-    private Button constrainYBtn ;
-    private Button constrainZBtn ;
-    private Button autoConstrainBtn ;
     private ToggleButton dataORplaneTangibleToggle ;
     private ToggleButton dataORplaneTouchToggle ;
     private ToggleButton tangibleToggle ;
@@ -176,13 +172,10 @@ public class MainActivity extends BaseARActivity
     private final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);;
 
     //Constrain interaction part 
-    private boolean constrainX ;
-    private boolean constrainY ;
-    private boolean constrainZ ;
+
     private boolean constrainRotation ;
     private boolean constrainTranslation ;
     private boolean autoConstraint ;
-    private boolean isConstrained = false ;
     private boolean dataOrTangibleValue = true ;
     private TextView bluetoothState ;
 
@@ -329,22 +322,6 @@ public class MainActivity extends BaseARActivity
         this.tangibleBtn = (ImageButton) findViewById(R.id.tangibleBtn);
         //this.tangibleBtn.setOnClickListener(this);
         this.tangibleBtn.setOnTouchListener(this);
-
-        this.constrainXBtn = (Button) findViewById(R.id.constrainX);
-        //this.constrainXBtn.setOnClickListener(this);
-        this.constrainXBtn.setOnTouchListener(this);
-
-        this.constrainYBtn = (Button) findViewById(R.id.constrainY);
-        //this.constrainYBtn.setOnClickListener(this);
-        this.constrainYBtn.setOnTouchListener(this);
-
-        this.constrainZBtn = (Button) findViewById(R.id.constrainZ);
-        //this.constrainZBtn.setOnClickListener(this);
-        this.constrainZBtn.setOnTouchListener(this);
-
-        this.autoConstrainBtn = (Button) findViewById(R.id.autoConstrain);
-        //this.autoConstrainBtn.setOnClickListener(this);
-        this.autoConstrainBtn.setOnTouchListener(this);
 
         touchToggle = (ToggleButton) findViewById(R.id.touchToggle);
         touchToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -563,11 +540,6 @@ public class MainActivity extends BaseARActivity
                  +fluidSettings.precision+";"
                  +interactionType+";"
                  +nbOfFingers+";"
-                 +isConstrained+";"
-                 +constrainX+";"
-                 +constrainY+";"
-                 +constrainZ+";"
-                 +autoConstraint+";"
                  +nbOfFingers+";"
                  +nbOfFingersButton+";"
                  +nbOfResets+";"
@@ -1397,97 +1369,6 @@ public class MainActivity extends BaseARActivity
 
     }
 
-    private void updateConstraintX(){
-        if(constrainX){
-            constrainY = false ;
-            constrainZ = false ;
-            fluidSettings.considerX = 1 ;
-            fluidSettings.considerY = 0 ;
-            fluidSettings.considerZ = 0 ;
-            isConstrained = true ;
-            client.considerX = 1 ;
-            client.considerY = 0 ;
-            client.considerZ = 0 ;
-        }
-        else if(!constrainX){
-
-            fluidSettings.considerX = 1 ;
-            fluidSettings.considerY = 1 ;
-            fluidSettings.considerZ = 1 ;
-            client.considerX = 1 ;
-            client.considerY = 1 ;
-            client.considerZ = 1 ;
-            isConstrained = false ;
-        }
-        Log.d(TAG,"X Constraint updated");
-        updateDataSettings();
-    }
-
-    private void updateConstraintY(){
-        if(constrainY){
-            constrainX = false ;
-            constrainZ = false ;
-            fluidSettings.considerX = 0 ;
-            fluidSettings.considerY = 1 ;
-            fluidSettings.considerZ = 0 ;
-            client.considerX = 0 ;
-            client.considerY = 1 ;
-            client.considerZ = 0 ;
-            isConstrained = true ;
-        }
-        else if(!constrainY){
-            fluidSettings.considerX = 1 ;
-            fluidSettings.considerY = 1 ;
-            fluidSettings.considerZ = 1 ;
-            isConstrained = false ;
-            client.considerX = 1 ;
-            client.considerY = 1 ;
-            client.considerZ = 1 ;
-        }
-        Log.d(TAG,"Y Constraint updated");
-        updateDataSettings();
-    }
-
-    private void updateConstraintZ(){
-        if(constrainZ){
-            constrainX = false ;
-            constrainY = false ;
-            fluidSettings.considerX = 0 ;
-            fluidSettings.considerY = 0 ;
-            fluidSettings.considerZ = 1 ;
-            client.considerX = 0 ;
-            client.considerY = 0 ;
-            client.considerZ = 1 ;
-            isConstrained = true ;
-        }
-        else if(!constrainZ){
-            fluidSettings.considerX = 1 ;
-            fluidSettings.considerY = 1 ;
-            fluidSettings.considerZ = 1 ;
-            client.considerX = 1 ;
-            client.considerY = 1 ;
-            client.considerZ = 1 ;
-            isConstrained = false ;
-        }
-        Log.d(TAG,"Z Constraint updated");
-        updateDataSettings();
-    }
-
-    private void updateConstraintAuto(){
-        int tmp = (this.autoConstraint) ? 1 : 0; 
-        int rotationValue = (this.autoConstraint) ? 0 : 1; 
-        //fluidSettings.considerX = tmp ;
-        //fluidSettings.considerY = tmp ;
-        //fluidSettings.considerZ = tmp ;
-        fluidSettings.considerRotation = rotationValue ;
-        //fluidSettings.considerTranslation = tmp ;
-        Log.d(TAG,"Auto Constraint updated. Value = "+this.autoConstraint);
-        isConstrained = autoConstraint ;
-        fluidSettings.autoConstraint = autoConstraint ;
-        updateDataSettings();
-        //Log.d(TAG,"X = "+fluidSettings.considerX+"  -- Y = "+fluidSettings.considerY
-                        //+"  -- Z = "+ fluidSettings.considerZ+"  - Rotation  = "+fluidSettings.considerRotation);
-    }
 
     private void showDistanceDialog() {
         LayoutInflater inflater = getLayoutInflater();
@@ -1563,8 +1444,7 @@ public class MainActivity extends BaseARActivity
 
     private boolean isButton(View v){
         int id = v.getId();
-        if(id == R.id.tangibleBtn || id == R.id.constrainX ||
-           id == R.id.constrainY || id == R.id.constrainZ || id == R.id.autoConstrain){
+        if(id == R.id.tangibleBtn ){
 
                 return true ;
         }
@@ -1620,79 +1500,6 @@ public class MainActivity extends BaseARActivity
                 removedButtonFinger = true ;
             }
             
-            //return true ;
-        }
-  
-
-        else if(v.getId() == R.id.constrainX){
-            if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                constrainX = true ;
-                this.constrainXBtn.setPressed(true);
-                this.nbOfFingersButton+=1;
-            }
-            else if(event.getAction() == MotionEvent.ACTION_UP ){
-                constrainX = false ;
-                this.constrainXBtn.setPressed(false);
-                this.nbOfFingersButton-=1 ;
-                removedButtonFinger = true ;
-            }
-            //Log.d(TAG,"Touched constrainX");
-            updateConstraintX();
-            int index = event.getActionIndex();
-            //return true ;
-        }
-
-        else if(v.getId() == R.id.constrainY){
-            if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                constrainY = true ;
-                this.constrainYBtn.setPressed(true);
-                this.nbOfFingersButton+=1;
-            }
-            else if(event.getAction() == MotionEvent.ACTION_UP ){
-                constrainY = false ;
-                this.constrainYBtn.setPressed(false);
-                this.nbOfFingersButton-=1 ;
-                removedButtonFinger = true ;
-            }
-            //Log.d(TAG,"Touched constrainY");
-            updateConstraintY();
-            int index = event.getActionIndex();
-            //return true ;
-        }
-
-        else if(v.getId() == R.id.constrainZ){
-            if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                constrainZ = true ;
-                this.constrainZBtn.setPressed(true);
-                this.nbOfFingersButton+=1;
-            }
-            else if(event.getAction() == MotionEvent.ACTION_UP ){
-                constrainZ = false ;
-                this.constrainZBtn.setPressed(false);
-                this.nbOfFingersButton-=1 ;
-                removedButtonFinger = true ;
-            }
-            //Log.d(TAG,"Touched constrainZ");
-            updateConstraintZ();
-            int index = event.getActionIndex();
-            //return true ;
-        }
-
-        else if(v.getId() == R.id.autoConstrain ){
-            if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                this.autoConstraint = true ;
-                this.autoConstrainBtn.setPressed(true);
-                this.nbOfFingersButton+=1;
-            }
-            else if(event.getAction() == MotionEvent.ACTION_UP ){
-                this.autoConstraint = false ;
-                this.autoConstrainBtn.setPressed(false);
-                this.nbOfFingersButton-=1 ;
-                removedButtonFinger = true ;
-            }
-            //Log.d(TAG,"Touched constrain Auto");
-            updateConstraintAuto();
-            int index = event.getActionIndex();
             //return true ;
         }
 
