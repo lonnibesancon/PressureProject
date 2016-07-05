@@ -115,9 +115,7 @@ public class MainActivity extends BaseARActivity
     private boolean isTangiblePressed = false ;
 
     private Button seedingBtn ;
-    //private Button translateBtn ;
-    //private ToggleButton dataORplane ;
-    //private ToggleButton translateBtn ;
+    
 
     public Object lock = new Object() ;
 
@@ -332,27 +330,6 @@ public class MainActivity extends BaseARActivity
         this.tangibleBtn = (ImageButton) findViewById(R.id.tangibleBtn);
         //this.tangibleBtn.setOnClickListener(this);
         this.tangibleBtn.setOnTouchListener(this);
-        /*this.tangibleBtn.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                 if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                    isTangibleOn = true ;
-                    FluidMechanics.buttonPressed();
-                }
-                else if(event.getAction() == MotionEvent.ACTION_UP ){
-                    isTangibleOn = false ;
-                    FluidMechanics.buttonReleased();
-                }
-                //int index = event.getActionIndex();
-                //fingerOnButtonIndex = event.getPointerId(index);
-             return true;
-            }
-        });*/
-
-        //this.sliceBtn = (Button) findViewById(R.id.sliceBtn);
-        //this.sliceBtn.setOnClickListener(this);
-        //this.tangibleBtn.setOnTouchListener(this);
 
         this.constrainXBtn = (Button) findViewById(R.id.constrainX);
         //this.constrainXBtn.setOnClickListener(this);
@@ -548,20 +525,6 @@ public class MainActivity extends BaseARActivity
             this.isInteracting = false ;
             //Log.d(TAG,"Logging");
         //}
-
-        
-        /*Date date = new Date();
-        long current = date.getTime();
-
-        long timestamp = current - initialTime ;
-        //if(timestamp - previousLogTime > logrefreshrate){
-            Log.d(TAG,"Timestamp = "+timestamp);
-            synchronized(lock){
-                logging.addLog(timestamp,fluidSettings.precision,(short)interactionMode,interactionType,phase,
-                           isConstrained, constrainX, constrainY, constrainZ, autoConstraint);    
-            }
-            previousLogTime = timestamp ;
-        //}*/
         
         
 
@@ -732,12 +695,6 @@ public class MainActivity extends BaseARActivity
            mLastTimestamp = event.timestamp;
        } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
            // Attention aux axes qui peuvent varier selon le device !
-           /*NativeApp.setAbsoluteOrientation(
-               event.values[0], // x
-               event.values[1], // y
-               event.values[2], // z
-               event.values[3]  // w
-           );*/
 
             double x = Math.asin(event.values[0]);
             float y = event.values[1];
@@ -750,12 +707,9 @@ public class MainActivity extends BaseARActivity
                 //Log.d(TAG,"YYYYYYYYYYYYYYYYYYYYYY");
             }
 
-            //Log.d(TAG,"Rotation X = "+event.values[0] );
-            //Log.d(TAG,"Rotation Y = "+event.values[1] );
-            //Log.d(TAG,"Rotation Z = "+event.values[2] );
-            //Log.d(TAG,"Rotation X = "+x+" -- Rotation Y = "+y+" -- Rotation Z = "+z);
-       } /*else if(event.sensor.getType() == Sensor.TYPE_ORIENTATION){
-            Log.d(TAG,"Rotation X = "+event.values[0]+" -- Rotation Y = "+event.values[1]+" -- Rotation Z = "+event.values[2]);
+         
+       } 
+
        }*/
        
    }
@@ -987,23 +941,6 @@ public class MainActivity extends BaseARActivity
     }
 
    
-    // @Override
-    // protected void processVideoFrame(final byte[] data, Camera camera) {
-    //     // Log.d(TAG, "processVideoFrame");
-    //     if (com.qualcomm.ar.pl.CameraPreview.instance.isReady()) {
-    //         // Log.d(TAG, "QCAR onPreviewFrame");
-    //         com.qualcomm.ar.pl.CameraPreview.instance.onPreviewFrame(data, camera);
-    //     }
-    //     super.processVideoFrame(data, camera);
-    //
-    //     if (mButton2Pressed) {
-    //         FluidMechanics.getSettings(tempSettings);
-    //         // Log.d(TAG, "temp percentage = " + tempSettings.surfacePercentage);
-    //         // Log.d(TAG, "temp slider = " + (int)(tempSettings.surfacePercentage * 100));
-    //         final VerticalSeekBar slider = (VerticalSeekBar)findViewById(R.id.verticalSlider);
-    //         slider.customSetProgress((int)(tempSettings.surfacePercentage * 100));
-    //     }
-    // }
 
     private void loadNewData() {
         loadDataset(++mDataSet);
@@ -1236,32 +1173,7 @@ public class MainActivity extends BaseARActivity
                     //updateDataSettings();
                     mProgress = -1;
                 }
-                //sliderPrecision.setMax(0);
-                //sliderPrecision.setProgress(0);
-
-                //If we want the precision to be system-controlled
                 mPressed = false;
-
-                //If we want the precision to be user-controlled
-                /*final Handler handler = new Handler();
-                handler.postDelayed(new Runnable(){
-                    @Override
-                    public void run(){
-                        sliderPrecision.setMax( (max - min) / step ); //Have to call because setProgress does not update the view
-                        sliderPrecision.customSetProgress((int)(initialPosition));
-                        //sliderPrecision.setMax( (max - min) / step ); //Have to call because setProgress does not update the view
-                        //sliderPrecision.onSizeChanged(sliderPrecision.getWidth(), sliderPrecision.getHeight(), 0,0);
-                        fluidSettings.precision = 1 ;
-                        mPressed = false;
-                    }
-                },100);*/
-                /*sliderPrecision.setMax( (max - min) / step ); //Have to call because setProgress does not update the view
-                sliderPrecision.customSetProgress((int)(initialPosition));
-                //sliderPrecision.setMax( (max - min) / step ); //Have to call because setProgress does not update the view
-                //sliderPrecision.onSizeChanged(sliderPrecision.getWidth(), sliderPrecision.getHeight(), 0,0);
-                fluidSettings.precision = 1 ;
-                mPressed = false;
-                //Log.d(TAG, "Precision Java = " + mProgress);*/
             }
 
             @Override
@@ -1269,11 +1181,7 @@ public class MainActivity extends BaseARActivity
                 // Only handle events called from VerticalSeekBar. Other events, generated
                 // from the base class SeekBar, contain bogus values because the Android
                 // SeekBar was not meant to be vertical.
-                /*if (fromUser)
-                    return;
 
-                if (!mPressed)
-                    return;*/
 
                 
                 mProgress = (double)progress/seekBar.getMax();
@@ -1315,13 +1223,6 @@ public class MainActivity extends BaseARActivity
             settings.showCamera = menu.findItem(R.id.action_showCamera).isChecked();
             fluidSettings.showCrossingLines = menu.findItem(R.id.action_showLines).isChecked();
 
-            /*constrainX = menu.findItem(R.id.action_constrainX).isChecked();
-            constrainY = menu.findItem(R.id.action_constrainY).isChecked();
-            constrainZ = menu.findItem(R.id.action_constrainZ).isChecked();
-            constrainTranslation = menu.findItem(R.id.action_constrainTranslation).isChecked();
-            constrainRotation = menu.findItem(R.id.action_constrainRotation).isChecked();
-            this.autoConstraint = menu.findItem(R.id.action_autoConstraint).isChecked();*/
-
             updateSettings();
             updateDataSettings();
 
@@ -1337,12 +1238,6 @@ public class MainActivity extends BaseARActivity
             menu.findItem(R.id.action_axisClipping).setChecked(fluidSettings.sliceType == FluidMechanics.SLICE_AXIS);
             menu.findItem(R.id.action_stylusClipping).setChecked(fluidSettings.sliceType == FluidMechanics.SLICE_STYLUS);
 
-            /*menu.findItem(R.id.action_constrainX).setChecked(constrainX);
-            menu.findItem(R.id.action_constrainY).setChecked(constrainY);
-            menu.findItem(R.id.action_constrainZ).setChecked(constrainZ);
-            menu.findItem(R.id.action_constrainTranslation).setChecked(constrainTranslation);
-            menu.findItem(R.id.action_constrainRotation).setChecked(constrainRotation);
-            menu.findItem(R.id.action_autoConstraint).setChecked(autoConstraint);*/
         }
 
         return true;
@@ -1428,60 +1323,6 @@ public class MainActivity extends BaseARActivity
                 showDistanceDialog();
                 break;
 
-    /*// Interaction Mode 
-        // We manipulate DATA 
-            case R.id.action_dataTangible:
-                changeInteractionMode(dataTangible);
-                break;
-
-            case R.id.action_dataTouch:
-                changeInteractionMode(dataTouch);
-                break ;
-
-            case R.id.action_dataHybrid:
-                //changeInteractionMode(dataTouchTangible);
-                //changeInteractionMode(dataHybrid);
-                break ;
-
-        // We manipulate the plane xz
-            case R.id.action_planeTouch:
-                //changeInteractionMode(planeTouch);
-                break ;
-
-            case R.id.action_planeTangible:
-                //changeInteractionMode(planeTangible);
-                break ;
-
-            case R.id.action_planeHybrid:
-                //changeInteractionMode(planeHybrid);
-                break ;
-
-        // We manipulate data + Plane 
-            case R.id.action_dataPlaneTouch:
-                //changeInteractionMode(dataPlaneTouch);
-                break ;
-
-            case R.id.action_dataPlaneTangible:
-                //changeInteractionMode(dataPlaneTangible);
-                break ;
-
-            case R.id.action_dataPlaneHybrid:
-                //changeInteractionMode(dataPlaneHybrid);
-                break ;
-
-        // Seeding mode 
-            case R.id.action_seedingTangible:
-                //changeInteractionMode(seedPointTangible);
-                break ;
-
-            case R.id.action_seedingTouch:
-                //changeInteractionMode(seedPointTouch);
-                break ;
-
-            case R.id.action_seedingHybrid:
-                //changeInteractionMode(seedPointHybrid);
-                break ;
-        */
             case R.id.change_IP:
                 changeIP();
                 break ;
@@ -1505,112 +1346,7 @@ public class MainActivity extends BaseARActivity
                 //this.finish();
                 //android.os.Process.killProcess(android.os.Process.myPid());
                 System.exit(0);
-                break ;
-
-// End Menu Action                
-// Constraining interaction
-/*
-            //Constraining interaction part
-            case R.id.action_constrainX:
-                constrainX = !constrainX ;
-                //If constrainX, we want to set value in JNI to 0
-                tmp = (constrainX) ? 0 : 1;  
-                //fluidSettings.constrainX = tmp; 
-                updateConstraintX();
-                item.setChecked(constrainX);
-                Log.d(TAG,"tmp = "+tmp);
-                handledDataSetting = true ;
-                break;
-
-            case R.id.action_constrainY:
-                constrainY = !constrainY ;
-                //If constrainX, we want to set value in JNI to 0
-                tmp = (constrainY) ? 0 : 1;  
-                //fluidSettings.constrainY = tmp; 
-                updateConstraintY();
-                item.setChecked(constrainY);
-                Log.d(TAG,"tmp = "+tmp);
-                handledDataSetting = true;
-                break;
-
-            case R.id.action_constrainZ:
-                constrainZ = !constrainZ ;
-                //If constrainX, we want to set value in JNI to 0
-                tmp = (constrainZ) ? 0 : 1;  
-                //fluidSettings.constrainZ = tmp; 
-                updateConstraintZ();
-                item.setChecked(constrainZ);
-                Log.d(TAG,"tmp = "+tmp);
-                handledDataSetting = true;
-                break;
-
-            case R.id.action_constrainTranslation:
-                constrainTranslation = !constrainTranslation ;
-                //If considerX, we want to set value in JNI to 0
-                //tmp = (constrainTranslation) ? 0 : 1;  
-                tmp = (constrainTranslation) ? 1 : 0;  
-                fluidSettings.considerTranslation = tmp; 
-
-                //Now for rotation
-                tmp = (constrainTranslation) ? 0 : 1;
-                fluidSettings.considerRotation = tmp ;
-
-
-                //And then we enable all the axis
-                constrainX = false ;
-                constrainY = false ;
-                constrainZ = false ;
-                constrainTranslation = false ;
-                fluidSettings.considerX = 1 ;
-                fluidSettings.considerY = 1 ;
-                fluidSettings.considerZ = 1 ;
-
-                item.setChecked(constrainTranslation);
-                Log.d(TAG,"tmp = "+tmp);
-                handledDataSetting = true;
-                break;
-
-
-
-            case R.id.action_constrainRotation:
-                constrainRotation = !constrainRotation ;
-                //If considerX, we want to set value in JNI to 0
-                //tmp = (constrainRotation) ? 0 : 1;  
-                tmp = (constrainRotation) ? 1 : 0;  
-                fluidSettings.considerRotation = tmp; 
-
-                //Now for rotation
-                tmp = (constrainRotation) ? 0 : 1;
-                fluidSettings.considerTranslation = tmp ;
-
-                //And then we enable all the axis
-                constrainX = false ;
-                constrainY = false ;
-                constrainZ = false ;
-                constrainRotation = false ;
-                fluidSettings.considerX = 1 ;
-                fluidSettings.considerY = 1 ;
-                fluidSettings.considerZ = 1 ;
-
-                item.setChecked(constrainRotation);
-                Log.d(TAG,"tmp = "+tmp);
-                handledDataSetting = true;
-                break;
-
-            case R.id.action_autoConstraint:
-                this.autoConstraint = !this.autoConstraint;
-                fluidSettings.autoConstraint = this.autoConstraint ;
-                item.setChecked(this.autoConstraint);
-                fluidSettings.considerX = 1 ;
-                fluidSettings.considerY = 1 ;
-                fluidSettings.considerZ = 1 ;
-                fluidSettings.considerRotation = 0 ;
-                fluidSettings.considerTranslation = 1 ;
-                handledDataSetting = true;
-                break ;
-
-*/
-            
+                break ;        
 
             /* Dataset */
             case R.id.action_dataset_ftle:
@@ -1896,27 +1632,6 @@ public class MainActivity extends BaseARActivity
             //return true ;
         }
   
-        /*else if(v.getId() == R.id.sliceBtn){
-            //TODO
-            //return true ;
-            int index = event.getActionIndex();
-            //Log.d(TAG,"Slice Button");
-
-            return true ;
-        }*/
-
-        /*else if(v.getId() == R.id.translateBtn){
-            if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                fluidSettings.translatePlane = true ;
-                this.translateBtn.setPressed(true);
-            }
-            else if(event.getAction() == MotionEvent.ACTION_UP ){
-                fluidSettings.translatePlane = false ;
-                this.translateBtn.setPressed(false);
-            }
-            updateDataSettings();
-            
-        }*/
 
         else if(v.getId() == R.id.constrainX){
             if (event.getAction() == MotionEvent.ACTION_DOWN ){
@@ -2073,39 +1788,6 @@ public class MainActivity extends BaseARActivity
                     break ;
                 }
             }
-            /*if(event.getPointerCount() == 2){
-                if(isOnTouchButton(rawPosX[0], rawPosY[0]) == false && isOnTouchButton(rawPosX[1], rawPosY[1]) == false){
-
-                    float dx = event.getX(0) - event.getX(1);
-                    float dy = event.getY(0) - event.getY(1);
-                    float dist = (float)Math.sqrt(dx*dx + dy*dy);
-                    this.interactionType = touchInteraction ;
-                    
-                    switch (event.getActionMasked()) {
-                        case MotionEvent.ACTION_POINTER_DOWN: {
-                            mInitialPinchDist = dist;
-                            mInitialZoomFactor = settings.zoomFactor;
-                            mZoomGesture = true;
-                            break;
-                        }
-                        case MotionEvent.ACTION_MOVE: {
-                            // settings.zoomFactor = mInitialZoomFactor * (float)Math.pow(dist/mInitialPinchDist, zoomExponent);
-                            if(dist > thresholdRST){
-                                settings.zoomFactor = mInitialZoomFactor * dist/mInitialPinchDist;
-                                if (settings.zoomFactor <= 0.25f)
-                                    settings.zoomFactor = 0.25f;
-                                updateSettings();
-                            }
-                            break;
-                        }
-                    }
-                   
-                }
-                
-                
-            }*/
-
-
 
             this.isInteracting = true ;
             requestRender();
@@ -2115,125 +1797,11 @@ public class MainActivity extends BaseARActivity
 
         }
 
-        /*if (mDatasetLoaded) {
-            if (event.getPointerCount() == 1) {
-                // Log.d(TAG, "action = " + event.getActionMasked());
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                    {
-                        Log.d(TAG, "pointer down");
-                        if (mVelocityDatasetLoaded) {
-                            FluidMechanics.releaseParticles();
-                            // mButton1Pressed = true;
-                        } else {
-                            FluidMechanics.buttonPressed();
-                            // mButton2Pressed = true;
-                        }
-                        break;
-                    }
 
-                    case MotionEvent.ACTION_UP:
-                    {
-                        Log.d(TAG, "pointer up");
-                        //fluidSettings.surfacePercentage = FluidMechanics.buttonReleased();
-                        FluidMechanics.buttonReleased();
-                        // mButton1Pressed = false;
-                        // mButton2Pressed = false;
-                        break;
-                    }
-
-                }
-            }
-        }
-
-        if (event.getPointerCount() <= 1) {
-            int action = event.getActionMasked();
-
-            if (action == MotionEvent.ACTION_UP) {
-                mZoomGesture = false;
-            }
-        } else {
-            float dx = event.getX(0) - event.getX(1);
-            float dy = event.getY(0) - event.getY(1);
-            float dist = (float)Math.sqrt(dx*dx + dy*dy);
-
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_POINTER_DOWN: {
-                    mInitialPinchDist = dist;
-                    mInitialZoomFactor = settings.zoomFactor;
-                    mZoomGesture = true;
-                    break;
-                }
-                case MotionEvent.ACTION_MOVE: {
-                    // settings.zoomFactor = mInitialZoomFactor * (float)Math.pow(dist/mInitialPinchDist, zoomExponent);
-                    settings.zoomFactor = mInitialZoomFactor * dist/mInitialPinchDist;
-                    if (settings.zoomFactor <= 0.25f)
-                        settings.zoomFactor = 0.25f;
-                    updateSettings();
-                    break;
-                }
-            }
-
-            // NativeApp.setZoom(mZoomFactor);
-        }*/
 
         return true;
     }
 
-    // // Handle mouse wheel events
-    // @Override
-    // public boolean onGenericMotionEvent(MotionEvent event) {
-    //     if (event.getSource() & InputDevice.SOURCE_CLASS_POINTER) {
-    //         switch (event.getAction()) {
-    //             case MotionEvent.ACTION_SCROLL:
-    //                 if (event.getAxisValue(MotionEvent.AXIS_VSCROLL) < 0.0f)
-    //                     Log.d(TAG, "wheel down");
-    //                 else
-    //                     Log.d(TAG, "wheel up");
-    //                 return true;
-    //         }
-    //     }
-    //     return super.onGenericMotionEvent(event);
-    // }
-
-    @Override
-    public boolean onDoubleTap(MotionEvent e) {
-        //Log.d(TAG, "onDoubleTap");
-        // loadNewData();
-        //openContextMenu(findViewById(R.id.glSurfaceView));
-        return true;
-    }
-
-    @Override
-    public boolean onDoubleTapEvent(MotionEvent e) {
-        // Log.d(TAG, "onDoubleTapEvent");
-        return true;
-    }
-
-	// @Override
-    // public boolean onLongClick(View view) {
-    //     openContextMenu(findViewById(R.id.glSurfaceView));
-    //     return true;
-    // }
-
-    @Override
-    public boolean onSingleTapConfirmed(MotionEvent e) {
-        // Log.d(TAG, "onSingleTapConfirmed");
-
-        // try {
-        //     stopService(new Intent(this, RFduinoService.class));
-        //     unbindService(rfduinoServiceConnection);
-        // } catch (Exception e2) {}
-        //
-        // // if (state == STATE_DISCONNECTED) {
-        // if (state != STATE_CONNECTED) {
-        //     Intent rfduinoIntent = new Intent(this, RFduinoService.class);
-        //     Log.d(TAG, "bindService");
-        //     bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
-        // }
-
-        return true;
-    }
 
    public void requestRender(){
         if (mView != null){
@@ -2262,72 +1830,8 @@ public class MainActivity extends BaseARActivity
 
     @Override
     public void onClick(View v) {
-        //int tmp ;
-        //Log.d(TAG,"On click listener");
-        /*if(v.getId() == R.id.translateBtn){
-            fluidSettings.translatePlane = !fluidSettings.translatePlane ;
-            Log.d(TAG,"TranslatePlane = "+fluidSettings.translatePlane);
-            updateDataSettings();
-        }*/
-        /*if(v.getId() == R.id.tangibleBtn){
-            //Log.d(TAG, "Tangible Button");
-            this.tangibleModeActivated = !this.tangibleModeActivated ;
-            if(this.tangibleModeActivated){
-                //this.tangibleBtn.setBackgroundColor(Color.ORANGE);
-                FluidMechanics.buttonPressed();    
-            }
-            else{
-                //this.tangibleBtn.setBackgroundColor(Color.DARK_GRAY);
-                FluidMechanics.buttonReleased();
-            }
-        }
-
-        else if(v.getId() == R.id.sliceBtn){
-            //TODO
-        }
-
-        else if(v.getId() == R.id.constrainX){
-            constrainX = !constrainX ;
-            //If constrainX, we want to set value in JNI to 0
-            tmp = (constrainX) ? 0 : 1;  
-            //fluidSettings.constrainX = tmp; 
-            updateConstraintX();
-            Log.d(TAG,"tmp = "+tmp);
-            updateDataSettings();
-        }
-
-        else if(v.getId() == R.id.constrainY){
-            constrainY = !constrainY ;
-            //If constrainX, we want to set value in JNI to 0
-            tmp = (constrainY) ? 0 : 1;  
-            //fluidSettings.constrainY = tmp; 
-            updateConstraintY();
-            Log.d(TAG,"tmp = "+tmp);
-            updateDataSettings();
-        }
-
-        else if(v.getId() == R.id.constrainZ){
-            constrainZ = !constrainZ ;
-            //If constrainX, we want to set value in JNI to 0
-            tmp = (constrainZ) ? 0 : 1;  
-            //fluidSettings.constrainZ = tmp; 
-            updateConstraintZ();
-            Log.d(TAG,"tmp = "+tmp);
-            updateDataSettings();
-        }
-
-        else if(v.getId() == R.id.autoConstrain ){
-            this.autoConstraint = !this.autoConstraint;
-            fluidSettings.autoConstraint = this.autoConstraint ;
-            fluidSettings.considerX = 1 ;
-            fluidSettings.considerY = 1 ;
-            fluidSettings.considerZ = 1 ;
-            fluidSettings.considerRotation = 0 ;
-            fluidSettings.considerTranslation = 1 ;
-            updateDataSettings();
-        }*/
+    
     }
-
 
 
 
