@@ -98,8 +98,6 @@ public class MainActivity extends BaseARActivity
     private static final boolean DEBUG = Config.DEBUG;
 
     private ImageButton tangibleBtn ;
-    private ToggleButton dataORplaneTangibleToggle ;
-    private ToggleButton dataORplaneTouchToggle ;
     private ToggleButton tangibleToggle ;
     private ToggleButton touchToggle ;
 
@@ -345,45 +343,15 @@ public class MainActivity extends BaseARActivity
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     isTangibleOn = true ;
-                    dataORplaneTangibleToggle.setEnabled(true);
                 } else {
                     isTangibleOn = false ;
-                    dataORplaneTangibleToggle.setEnabled(false);
                 }
                 setInteractionMode();
             }
 
         });
 
-        dataORplaneTangibleToggle = (ToggleButton) findViewById(R.id.dataORplaneTangible);
-        dataORplaneTangibleToggle.setChecked(true);
-        dataORplaneTangibleToggle.setEnabled(false);
-        dataORplaneTangibleToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    dataORplaneTangible = true ;
-                } else {
-                    dataORplaneTangible = false ;
-                }
-                setInteractionMode();
-            }
 
-        });
-
-        dataORplaneTouchToggle = (ToggleButton) findViewById(R.id.dataORplaneTouch);
-        dataORplaneTouchToggle.setChecked(true);
-        dataORplaneTouchToggle.setEnabled(false);
-        dataORplaneTouchToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {    
-                if (isChecked) {
-                    dataORplaneTouch = true ;
-                } else {
-                    dataORplaneTouch = false ;
-                }
-                setInteractionMode();
-            }
-
-        });
 
         bluetoothState = (TextView) findViewById(R.id.textOverlay);
         /*this.tangibleBtn.setOnClickListener(new OnClickListener() {
@@ -1353,8 +1321,6 @@ public class MainActivity extends BaseARActivity
         this.interactionMode = nothing ;
         this.tangibleToggle.setChecked(false);
         this.touchToggle.setChecked(false);
-        this.dataORplaneTangibleToggle.setChecked(true);
-        this.dataORplaneTouchToggle.setChecked(true);
 
 
         isTangibleOn = false ;
