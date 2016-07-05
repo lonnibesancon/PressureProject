@@ -18,9 +18,6 @@
 #define dataPlaneTangible  		22 
 #define dataPlaneHybrid 		23
 #define dataTouchTangible 		24
-#define planeTouchTangible  	25
-#define dataPlaneTouchTangible 	26
-#define dataPlaneTangibleTouch 	27
 
 
 //Seeding point interaction

@@ -795,11 +795,7 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 
 		//To constrain interaction
 		
-
-		//if(interactionMode == planeTangible || (interactionMode == seedPointTangible && settings->dataORplane == 1) || interactionMode == seedPointHybrid || interactionMode == dataPlaneHybrid || (interactionMode == dataPlaneTangible && settings->dataORplane == 1)){
-		if( interactionMode == dataTangible || 
-			interactionMode == dataTouchTangible ||
-			interactionMode == dataPlaneTangibleTouch)
+		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
 		{
 			trans.x *= settings->considerX ;//* settings->considerTranslation ;
 			trans.y *= settings->considerY ;//* settings->considerTranslation ;
@@ -827,13 +823,7 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 	ry *=settings->precision ;
 	rx *=settings->precision ;
 	if(tangoEnabled){
-		/*if(interactionMode == planeTangible || (interactionMode == seedPointTangible && settings->dataORplane == 1) || 
-		   interactionMode == seedPointHybrid || interactionMode == dataPlaneHybrid || interactionMode == planeHybrid ||
-		   (interactionMode == dataPlaneTangible && settings->dataORplane == 1) ){*/
-		//else if(interactionMode == dataTangible || (interactionMode == seedPointTangible && settings->dataORplane == 0) || interactionMode == dataPlaneHybrid || (interactionMode == dataPlaneTangible && settings->dataORplane == 0) || interactionMode == dataHybrid){
-		if( interactionMode == dataTangible || 
-				interactionMode == dataTouchTangible ||
-				interactionMode == dataPlaneTangibleTouch)
+		if(interactionMode == dataTangible || interactionMode == dataTouchTangible)
 		{
 			
 			Quaternion rot = currentDataRot;
@@ -905,8 +895,7 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 		diff *= settings->precision ;
 
 		if( interactionMode == dataTouch || 
-			interactionMode == dataTouchTangible ||
-			interactionMode == dataPlaneTouchTangible)
+			interactionMode == dataTouchTangible )
 		{
 					Quaternion rot = currentDataRot;
 					rot = rot * Quaternion(rot.inverse() * Vector3::unitZ(), 0);
@@ -958,8 +947,7 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 		float distance = sqrt(    (x1-x2)*(x1-x2) + (y1-y2) * (y1-y2)    );
 		//LOGD("Distance %f", distance);
 		if(interactionMode == dataTouch || 
-			    interactionMode == dataTouchTangible ||
-			    interactionMode == dataPlaneTouchTangible)
+			    interactionMode == dataTouchTangible )
 		{
 			currentDataPos +=trans ;
 		}
@@ -984,8 +972,7 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 
 	        //if(interactionMode == planeTouch){
 	      	if(interactionMode == dataTouch || 
-			    	interactionMode == dataTouchTangible ||
-			    	interactionMode == dataPlaneTouchTangible)
+			    	interactionMode == dataTouchTangible)
 			{
 				Quaternion rot = currentDataRot;
 				rot = rot * Quaternion(rot.inverse() * Vector3::unitZ(), angle);
@@ -1023,11 +1010,7 @@ void FluidMechanics::Impl::updateMatrices(){
 
 
 	if( interactionMode == dataTouch ||
-		interactionMode == planeTouch ||
-		interactionMode == dataTouchTangible ||
-		interactionMode == planeTouchTangible ||
-		interactionMode == dataPlaneTouchTangible ||
-		interactionMode == dataPlaneTangibleTouch
+		interactionMode == dataTouchTangible
 		)
 	{
 
@@ -1270,11 +1253,7 @@ void FluidMechanics::Impl::renderObjects()
 				glDepthMask(true);
 				glLineWidth(2.0f);
 				if(tangoEnabled && (interactionMode == dataTangible ||
-									interactionMode == planeTangible ||
-									interactionMode == dataTouchTangible ||
-									interactionMode == planeTouchTangible ||
-									interactionMode == dataPlaneTouchTangible ||
-									interactionMode == dataPlaneTangibleTouch))
+									interactionMode == dataTouchTangible))
 				{
 					outline->setColor(Vector3(0, 1.0f, 0));
 				}
