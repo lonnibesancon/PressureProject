@@ -867,44 +867,10 @@ bool FluidMechanics::Impl::computeStylusClipPlane(Vector3& point, Vector3& norma
 	// FIXME: state->stylusModelMatrix may be invalid (non-invertible) in some cases
 	try {
 
-	// Vector3 pt = state->stylusModelMatrix * Vector3::zero();
-	// LOGD("normal = %s", Utility::toString(normal).c_str());
-	// LOGD("pt = %s", Utility::toString(pt).c_str());
-
-	// static const float size = 128.0f;
-	// static const float size = 180.0f;
 	const float size = 0.5f * (60.0f + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
 
 	Matrix4 planeMatrix = state->stylusModelMatrix;
 
-#if 0
-	if (wasVisible)
-		planeMatrix = filter(planeMatrix, prevMatrix, posWeight, rotWeight);
-	prevMatrix = planeMatrix;
-	wasVisible = true;
-#endif
-
-	// Matrix4 planeMatrix = state->stylusModelMatrix;
-	// // planeMatrix = planeMatrix * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor);
-
-	// Project the stylus->data vector onto the stylus X axis
-	Vector3 dataPosInStylusSpace = state->stylusModelMatrix.inverse() * state->modelMatrix * Vector3::zero();
-
-	// Shift the clip plane along the stylus X axis in order to
-	// reach the data, even if the stylus is far away
-	// Vector3 offset = (-Vector3::unitX()).project(dataPosInStylusSpace);
-#if 0
-	// Shift the clip plane along the other axis in order to keep
-	// it centered on the data
-	Vector3 n = Vector3::unitZ(); // plane normal in stylus space
-	// Vector3 v = dataPosInStylusSpace - offset; // vector from the temporary position to the data center point
-	// offset += v.planeProject(n); // project "v" on the plane, and shift the clip plane according to the result
-	Vector3 v = dataPosInStylusSpace;
-	Vector3 offset = v.projectOnPlane(n); // project "v" on the plane, and shift the clip plane according to the result
-
-	// Apply the computed offset
-	planeMatrix = planeMatrix * Matrix4::makeTransform(offset);
-#endif 
 	// The slice will be rendered from the viewpoint of the plane
 	Matrix4 proj = app->getProjMatrix(); proj[0][0] = -proj[1][1] / 1.0f; // same as "projMatrix", but with aspect = 1
 	Matrix4 slicingMatrix = Matrix4((proj * planeMatrix.inverse() * state->modelMatrix).inverse().get3x3Matrix());
@@ -1209,61 +1175,6 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 	if(fingerPositions.size() == 0){
 		return ;
 	}
-	//LOGD("Nb Of Fingers = %d", fingerPositions.size());
-
-	//Particle seeding case
-	//LOGD("ComputeFingerInteraction Function");
-	//LOGD("%d == %d   ---  %d", interactionMode, seedPoint, fingerPositions.size());
-	/*if( (interactionMode == seedPointTangible ||interactionMode == seedPointHybrid || interactionMode==seedPointTouch) 
-	   && fingerPositions.size() == 1 && settings->isSeeding == true){
-		LOGD("Seeding");
-		if(computeSeedingPlacement()){
-			return ;
-		}
-	}*/
-
-	//Rotation case
-	//For the plane, it gives both rotations AND translations, depending on the state of the button
-	/*if( (interactionMode == planeTouch || (interactionMode == dataPlaneTouch && settings->dataORplane == 1) || (interactionMode == seedPointTouch && settings->dataORplane == 1)) && fingerPositions.size() == 1){
-		synchronized(fingerPositions){
-			currentPos = Vector2(fingerPositions[0].x,fingerPositions[0].y);
-		}
-		synchronized(prevFingerPositions){
-			prevPos = Vector2(prevFingerPositions[0].x, prevFingerPositions[0].y);
-		}
-
-		Vector2 diff = currentPos - prevPos ;
-		diff *= settings->precision ;
-
-		//LOGD("Diff = %f -- %f", diff.x, diff.y);
-
-		//That's where we have to distinguish between translations and rotations
-		//Depending on the state of translationPlane in settings
-
-		//Translation case
-		//LOGD("translatePlane value = %d",settings->translatePlane);
-		if(settings->translatePlane){
-			diff/= 10 ;
-			//LOGD("Translate Plane %f -- %f", diff.x, diff.y);
-			diff *= settings->precision ;
-			diff *= settings->considerTranslation * settings->considerX * settings->considerY;
-			Vector3 trans = Vector3(diff.x+diff.y, diff.x+diff.y, diff.x+diff.y);
-			trans *= sliceNormal ;
-			currentSlicePos +=trans ;
-		}
-
-		else{
-			diff /=1000 ;
-			Quaternion rot = currentSliceRot;
-			rot = rot * Quaternion(rot.inverse() * Vector3::unitZ(), 0);
-			rot = rot * Quaternion(rot.inverse() * Vector3::unitY(), -diff.x);
-			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), diff.y);
-			//currentSliceRot = rot ; //Version with the plane moving freely in the world
-			currentSliceRot = rot ;	
-		}	
-
-		return ;
-	}*/
 
 	if(fingerPositions.size() == 1){
 		//LOGD("Normal Finger Interaction 1 finger");
@@ -1303,34 +1214,6 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 					rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), diff.y);
 					currentSliceRot = rot;
 		}
-
-		//Previous version
-		/*if(interactionMode == dataHybrid){
-			diff /=2 ;
-			diff /=4 ;
-			diff *= settings->precision ;
-			diff *= settings->considerTranslation * settings->considerX * settings->considerY;
-			Vector3 trans = Vector3(diff.x, diff.y, 0);
-			currentDataPos +=trans ;
-		}
-		else{
-
-
-			diff /=1000 ;
-			diff *= settings->precision ;
-
-			diff.x *= settings->considerY * settings->considerRotation ;
-			diff.y *= settings->considerX * settings->considerRotation ;
-
-			if(interactionMode == dataTouch || interactionMode == dataPlaneHybrid || interactionMode == dataHybrid || (interactionMode == dataPlaneTouch && settings->dataORplane == 0) || interactionMode == seedPointHybrid || (interactionMode == seedPointTouch && settings->dataORplane==0)){
-				//LOGD("Data interaction");
-				Quaternion rot = currentDataRot;
-				rot = rot * Quaternion(rot.inverse() * Vector3::unitZ(), 0);
-				rot = rot * Quaternion(rot.inverse() * Vector3::unitY(), -diff.x);
-				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), diff.y);
-				currentDataRot = rot;
-			}
-		}*/
 
 	}
 
@@ -1390,14 +1273,6 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 		{
 			currentDataPos +=trans ;
 		}
-		/*if(interactionMode == planeTouch){
-			currentSlicePos +=trans ;
-		}
-		else if(interactionMode == dataTouch || interactionMode == dataHybrid || interactionMode == dataPlaneHybrid || (interactionMode == dataPlaneTouch && settings->dataORplane == 0) || (interactionMode == seedPointTouch && settings->dataORplane == 0) || interactionMode == seedPointHybrid ){
-			currentDataPos +=trans ;	
-		}*/
-
-
 		//Rotation on the z axis --- Spinning 
 		if(distance> thresholdRST || isAboveThreshold){
 			isAboveThreshold = true ;
@@ -1442,10 +1317,7 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 			}
 
 
-			//Scale case:
-			//float dx = fingerPositions[0].x - fingerPositions[1].x;
-	        //float dy = fingerPositions[0].y - fingerPositions[1].y;
-	        //float dist = sqrt(dx*dx + dy*dy);
+
 	        if(mInitialPinchDistSet == false){
 	        	mInitialPinchDist = distance ;
 	        	mInitialPinchDistSet = true ;
@@ -1456,11 +1328,6 @@ void FluidMechanics::Impl::computeFingerInteraction(){
             	settings->zoomFactor = 0.25f;
             }
                 
-			//LOGD("Angle == %f", angle);
-			//LOGD("New Vector = %f -- %f", newVec.x, newVec.y);
-			//LOGD("Initial Vector = %f -- %f", initialVector.x, initialVector.y);
-
-			//We set the initialVector to the new one, because relative mode
 		}
 
 		//Should be done no matter what is happening with the distance between the two fingers
@@ -1474,22 +1341,7 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 void FluidMechanics::Impl::updateMatrices(){
 	Matrix4 statem ;
 	Matrix4 slicem ;
-	
-	//LOGD("Tango Pos = %s", Utility::toString(currentSlicePos).c_str());
-	//LOGD("Tango Rot = %s", Utility::toString(currentSliceRot).c_str());
-	//LOGD("Precision = %f",settings->precision);
-	//LOGD("ConstrainX = %d ; ConstrainY = %d ; ConstrainZ = %d", settings->considerX, settings->considerY, settings->considerZ );
 
-	//LOGD("UPDATE MATRICES");
-	//We need to call computeFingerInteraction() if the interaction mode uses tactile
-	/*if(	interactionMode == dataTouch ||
-	   	interactionMode == dataHybrid ||
-	   	interactionMode == planeTouch ||
-	   	interactionMode == dataPlaneTouch ||
-	   	interactionMode == dataPlaneHybrid || 
-	   	interactionMode == seedPointTangible ||
-	   	interactionMode == seedPointTouch ||
-	   	interactionMode == seedPointHybrid){*/
 
 	if(settings->isSeeding && velocityData){
 		//LOGD("Seeding Case");
@@ -1535,53 +1387,6 @@ void FluidMechanics::Impl::updateMatrices(){
 
 	updateSlicePlanes();
 
-#if 0
-	Matrix4 statem ;
-	Matrix4 slicem ;
-	//synchronized(state->modelMatrix) {
-		//LOGD("Tango Pos = %s", Utility::toString(currentSlicePos).c_str());
-		//LOGD("Tango Rot = %s", Utility::toString(currentSliceRot).c_str());
-		//LOGD("Precision = %f",settings->precision);
-		LOGD("ConstrainX = %d ; ConstrainY = %d ; ConstrainZ = %d", settings->considerX, settings->considerY, settings->considerZ );
-		if(interactionMode == sliceTangibleOnly){
-			m = Matrix4::makeTransform(currentSlicePos, currentSliceRot);	//Version with the plane moving freely
-			//m = Matrix4::makeTransform(currentSlicePos, currentSliceRot.inverse());	//Fixed Plane on tablet
-		}
-		else if(interactionMode == dataTangibleOnly){
-			m = Matrix4::makeTransform(currentDataPos, currentDataRot);
-		}	
-		else if(interactionMode == dataTouchOnly){
-			computeFingerInteraction();
-			m = Matrix4::makeTransform(currentDataPos, currentDataRot);
-		}
-		else if(interactionMode == seedPoint){
-			computeFingerInteraction();
-			m = Matrix4::makeTransform(currentSlicePos, currentSliceRot.inverse());	//Fixed Plane
-			//m = Matrix4::makeTransform(currentDataPos, currentDataRot);
-		}
-
-	//}
-	if(interactionMode == sliceTangibleOnly){
-		//Plane moving freely
-		synchronized(state->stylusModelMatrix) {
-			state->stylusModelMatrix = m;
-		}
-
-		//Plane not moving on the tablet
-		/*synchronized(state->modelMatrix) {
-			state->modelMatrix = m ;
-		}*/
-	}
-	else if(interactionMode == dataTangibleOnly || interactionMode == dataTouchOnly){
-		synchronized(state->modelMatrix) {
-			state->modelMatrix = m ;
-		}
-	}
-	
-
-	updateSlicePlanes();
-
-#endif
 }
 
 std::string FluidMechanics::Impl::getData(){
@@ -1788,43 +1593,6 @@ void FluidMechanics::Impl::updateSlicePlanes()
 					return true;
 				};
 
-				// const auto getAABBNormalAt = [](Vector3 point, const Vector3& aabbMin, const Vector3& aabbMax) -> Vector3 {
-				// 	const auto sign = [](float value) {
-				// 		return (value >= 0 ? 1 : -1);
-				// 	};
-
-				// 	// http://www.gamedev.net/topic/551816-finding-the-aabb-surface-normal-from-an-intersection-point-on-aabb/#entry4549909
-				// 	Vector3 normal = Vector3::zero();
-				// 	float min = std::numeric_limits<float>::max();
-				// 	float distance;
-
-				// 	Vector3 extents = aabbMax-aabbMin;
-				// 	Vector3 center = (aabbMax+aabbMin)/2;
-
-				// 	point -= center;
-
-				// 	LOGD("point = %s, extents = %s", Utility::toString(point).c_str(), Utility::toString(extents).c_str());
-
-				// 	distance = std::abs(extents.x - std::abs(point.x));
-				// 	if (distance < min) {
-				// 		min = distance;
-				// 		normal = sign(point.x) * Vector3::unitX();
-				// 	}
-
-				// 	distance = std::abs(extents.y - std::abs(point.y));
-				// 	if (distance < min) {
-				// 		min = distance;
-				// 		normal = sign(point.y) * Vector3::unitY();
-				// 	}
-
-				// 	distance = std::abs(extents.z - std::abs(point.z));
-				// 	if (distance < min) {
-				// 		min = distance;
-				// 		normal = sign(point.z) * Vector3::unitZ();
-				// 	}
-
-				// 	return normal;
-				// };
 
 				// Same as posToDataCoords(), but for directions (not positions)
 				// (direction goes from the effector to the stylus: +X axis)
@@ -1837,18 +1605,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 				synchronized (effectorIntersection) {
 					// effectorIntersection = Vector3::zero();
 					effectorIntersectionValid = false;
-					// if (rayPlaneIntersection2(dataPos, dataDir, Vector3(0, 0, 0), -Vector3::unitX(), t) && t >= min && t <= max)
-					// 	effectorIntersection = dataCoordsToPos(dataPos + dataDir*t);
-					// if (rayPlaneIntersection2(dataPos, dataDir, Vector3(dataDim[0]*dataSpacing.x, 0, 0), Vector3::unitX(), t) && t >= min && t <= max)
-					// 	effectorIntersection = dataCoordsToPos(dataPos + dataDir*t);
-					// if (rayPlaneIntersection2(dataPos, dataDir, Vector3(0, 0, 0), -Vector3::unitY(), t) && t >= min && t <= max)
-					// 	effectorIntersection = dataCoordsToPos(dataPos + dataDir*t);
-					// if (rayPlaneIntersection2(dataPos, dataDir, Vector3(0, dataDim[1]*dataSpacing.y, 0), Vector3::unitY(), t) && t >= min && t <= max)
-					// 	effectorIntersection = dataCoordsToPos(dataPos + dataDir*t);
-					// if (rayPlaneIntersection2(dataPos, dataDir, Vector3(0, 0, 0), -Vector3::unitZ(), t) && t >= min && t <= max)
-					// 	effectorIntersection = dataCoordsToPos(dataPos + dataDir*t);
-					// if (rayPlaneIntersection2(dataPos, dataDir, Vector3(0, 0, dataDim[2]*dataSpacing.z), Vector3::unitZ(), t) && t >= min && t <= max)
-					// 	effectorIntersection = dataCoordsToPos(dataPos + dataDir*t);
+					
 					if (rayAABBIntersection(dataPos, dataDir, Vector3::zero(), Vector3(dataDim[0], dataDim[1], dataDim[2])*dataSpacing, tmin, tmax) && tmax > 0) {
 						effectorIntersection = dataCoordsToPos(dataPos + dataDir*tmax);
 						// effectorIntersectionNormal = state->modelMatrix.transpose().get3x3Matrix() * getAABBNormalAt(dataPos + dataDir*tmax, Vector3::zero(), Vector3(dataDim[0], dataDim[1], dataDim[2])*dataSpacing);
@@ -1903,8 +1660,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 		}
 	}
 
-	// if (!state->tangibleVisible) // && !state->stylusVisible)
-	// 	app->resetThreshold(); // reset the threshold in case its value went too far due
+
 
 	bool clipPlaneSet = false;
 
@@ -1953,13 +1709,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 
 			// dir = Vector3(dataDim[0]*dataSpacing.x, 0, 0);
 			static const float min = 0.0f;
-			// static const float max = 1.0f;
-			// static const float max = 1.15f; // FIXME: why?
-			// static const float max = settings->zoomFactor;
-			// static const float max = 4.6f; // 10.5 (ironProt), 1.15 (head)
-			// // D/NativeApp(24843): 2.135922 1.067961 103 1.000000
-			// // D/NativeApp(24843): 3.235294 1.617647 68 1.000000
-			// // D/NativeApp(24843): 1.074219 0.537109 64 3.200000
+
 			const float max = settings->zoomFactor;// * settings->zoomFactor;
 
 			// static const float max = 2*settings->zoomFactor*state->computedZoomFactor;
@@ -2063,30 +1813,11 @@ void FluidMechanics::Impl::renderObjects()
 		}
 	}
 
-	// Stylus (paddle?) z-buffer occlusion
-	// TODO: correct occlusion shape for the real *stylus*
+	
 	if (false && state->stylusVisible && cube /*&& (settings->sliceType != SLICE_STYLUS || slice->isEmpty())*/) {
 		glColorMask(false, false, false, false);
 		glDepthMask(true);
 
-		// if (qcarVisible) {
-		// 	static const Matrix4 transform = Matrix4::makeTransform(
-		// 		Vector3::zero(),
-		// 		Quaternion::identity(),
-		// 		Vector3(63, 63, 3)/2
-		// 	);
-		//
-		// 	synchronized (state->stylusModelMatrix) {
-		// 		cube->render(proj, state->stylusModelMatrix*transform);
-		// 	}
-		// } else {
-		// 	bool isRfduinoStylus = false;
-		// 	try {
-		// 		std::string curMarkerFileName = stylus.getMarkers().at(stylus.getCurrentMarkerID()).patternFileName;
-		// 		isRfduinoStylus = (curMarkerFileName == "14.patt" || curMarkerFileName == "24.patt" || curMarkerFileName == "26.patt");
-		// 	} catch (...) {
-		// 		// ...
-		// 	}
 
 			synchronized (state->stylusModelMatrix) {
 				// if (!isRfduinoStylus) {
@@ -2495,115 +2226,6 @@ void FluidMechanics::Impl::renderObjects()
 							slice->render(proj, s2mm);
 						}
 
-#if 0
-						synchronized(slicePoints) {
-							// for (const Vector3& pt : slicePoints) {
-							// 	// LOGD("pt = %s", Utility::toString(pt).c_str());
-							// 	const Matrix4 transform1 = Matrix4::makeTransform(
-							// 		// Vector3(0, 0, 0), // (after scaling)
-							// 		pt,
-							// 		Quaternion::identity(),
-							// 		Vector3(10.0f)
-							// 	);
-							// 	cube->setColor(Vector3(1.0f));
-							// 	cube->setOpacity(1.0f);
-							// 	// cube->render(proj, Matrix4::makeTransform(pt)*transform1);
-							// 	cube->render(proj, transform1);
-							// }
-							// // LOGD("============");
-							if (!slicePoints.empty()) {
-								// Vector3 center = Vector3::zero();
-								// for (const Vector3& pt : slicePoints) {
-								// 	center += pt;
-								// }
-								// center /= slicePoints.size();
-
-								// std::vector<Vector3> lineVec;
-								// std::map<unsigned int, std::map<unsigned int, float>> graph;
-								// for (unsigned int i = 0; i < slicePoints.size(); ++i) {
-								// 	for (unsigned int j = 0; j < slicePoints.size(); ++j) {
-								// 		if (i == j) // || (graph.count(j) && graph.at(j).count(i)))
-								// 			continue;
-								// 		const Vector3 pt1 = slicePoints.at(i);
-								// 		const Vector3 pt2 = slicePoints.at(j);
-								// 		graph[i][j] = (pt2 - pt1).normalized().dot((center - pt1).normalized());
-								// 	}
-								// }
-
-								// for (const auto& pair : graph) {
-								// 	typedef std::pair<unsigned int, float> PairT;
-								// 	std::vector<PairT> dots;
-								// 	for (const auto& pair2 : pair.second) {
-								// 		dots.push_back(PairT(pair2.first, pair2.second));
-								// 	}
-								// 	// Get the two edges with the lowest dot products relative to "center"
-								// 	std::sort(dots.begin(), dots.end(), [](const PairT& a, const PairT& b) { return a.second < b.second; });
-								// 	dots.resize(2);
-								// 	for (const auto& pair3 : dots) {
-								// 		lineVec.push_back(slicePoints.at(pair.first));
-								// 		lineVec.push_back(slicePoints.at(pair3.first));
-								// 	}
-								// }
-
-
-
-								std::vector<Vector3> lineVec;
-								// std::set<std::pair<unsigned int, unsigned int>> pairs;
-								// struct LineStruct { Vector3 p1, p2; float dist; };
-								// std::map<std::pair<unsigned int, unsigned int>, LineStruct> pairs;
-								std::map<unsigned int, std::map<unsigned int, float>> graph;
-								for (unsigned int i = 0; i < slicePoints.size(); ++i) {
-									for (unsigned int j = 0; j < slicePoints.size(); ++j) {
-										// std::pair<unsigned int, unsigned int> pair(i, j);
-										// if (i == j || pairs.count(pair))
-										if (i == j || (graph.count(j) && graph.at(j).count(i)))
-											continue;
-										const Vector3 pt1 = slicePoints.at(i);
-										const Vector3 pt2 = slicePoints.at(j);
-										const Vector3 dpt1 = posToDataCoords(pt1);
-										const Vector3 dpt2 = posToDataCoords(pt2);
-										static const float epsilon = 0.1f;
-										if (std::abs(dpt1.x-dpt2.x) < epsilon || std::abs(dpt1.y-dpt2.y) < epsilon || std::abs(dpt1.z-dpt2.z) < epsilon) {
-										// float dot = (pt2 - pt1).normalized().dot((center - pt1).normalized());
-										// LOGD("dot = %f", dot);
-										// if (dot < 0.9f) {
-											lineVec.push_back(pt1);
-											lineVec.push_back(pt2);
-										}
-											// pairs.insert(pair);
-											// graph[i][j] = pt1.distance(pt2);
-										// }
-									}
-								}
-								// // for (auto& pair : graph) {
-								// // 	// if (pair.second.size() <= 2) {
-								// // 	// 	for (auto& pair3 : pair.second) {
-								// // 	// 		lineVec.push_back(slicePoints.at(pair.first));
-								// // 	// 		lineVec.push_back(slicePoints.at(pair3.first));
-								// // 	// 	}
-								// // 	// 	continue;
-								// // 	// }
-								// // 	typedef std::pair<unsigned int, float> PairT;
-								// // 	std::vector<PairT> dists;
-								// // 	for (auto& pair2 : pair.second) {
-								// // 		dists.push_back(PairT(pair2.first, pair2.second));
-								// // 	}
-								// // 	// std::sort(dists.begin(), dists.end(), std::lower<float>());
-								// // 	std::sort(dists.begin(), dists.end(), [](const PairT& a, const PairT& b) { return a.second < b.second; });
-								// // 	dists.resize(2);
-								// // 	for (auto& pair3 : dists) {
-								// // 		lineVec.push_back(slicePoints.at(pair.first));
-								// // 		lineVec.push_back(slicePoints.at(pair3.first));
-								// // 	}
-								// // }
-								lines->setLines(lineVec);
-								// glLineWidth(1.0f);
-								glLineWidth(2.0f);
-								lines->setColor(Vector3(0, 1, 0));
-								lines->render(proj, Matrix4::identity());
-							}
-						}
-#endif
 					}
 
 					break;
@@ -2625,49 +2247,7 @@ void FluidMechanics::Impl::renderObjects()
 		// }
 	}
 
-	// // XXX: debug
-	// if (!settings->showVolume && !settings->showSurface) {
-	// 	glEnable(GL_CULL_FACE);
-	// 	synchronized(tangible) {
-	// 		for (const auto& pair : tangible.getMarkers()) {
-	// 			if (!pair.second.isVisible())
-	// 				continue;
-	//
-	// 			// LOGD("marker %2d (main=%d) err=%f cf=%f", pair.first, pair.second.isMain, pair.second.err, pair.second.cf);
-	//
-	// 			// Center the cube on its native, and scale it up
-	// 			const Matrix4 transform = Matrix4::makeTransform(
-	// 				Vector3(0, 0, 0.5f), // (after scaling)
-	// 				Quaternion::identity(),
-	// 				Vector3(20.0f, 20.0f, 1.0f) * (pair.second.width/51.0)
-	// 			);
-	//
-	// 			if (pair.first == tangible.getCurrentMarkerID())
-	// 				cube->setColor(Vector3(0.25f, 1.0f, 0.25f));
-	// 			else if (pair.second.dubious)
-	// 				cube->setColor(Vector3(1.0f, 0.25f, 0.25f));
-	// 			else
-	// 				cube->setColor(Vector3(0.25f, 0.25f, 1.0f));
-	//
-	// 			cube->render(proj, pair.second.transform*transform);
-	//
-	// 			// LOGD("modelMatrix for marker %d = %s", pair.first, Utility::toString(pair.second.transform).c_str());
-	// 		}
-	// 		// LOGD("==========");
-	// 	}
-	// }
-
-	// if (qcarVisible) {
-	// 	synchronized (qcarModelMatrix) {
-	// 		const Matrix4 transform = Matrix4::makeTransform(
-	// 			Vector3(0, 0, 0.5f), // (after scaling)
-	// 			Quaternion::identity(),
-	// 			Vector3(30.0f, 30.0f, 30.0f)
-	// 		);
-
-	// 		cube->render(proj, qcarModelMatrix*transform);
-	// 	}
-	// }
+	
 }
 
 
