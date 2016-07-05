@@ -878,11 +878,6 @@ public class MainActivity extends BaseARActivity
                 //client.dataset = velocities ;
                 break;
 
-            /*case 4:
-                //this.finishAffinity();
-                //android.os.Process.killProcess(android.os.Process.myPid());
-                //System.exit(0);
-                break ;*/
 
         }
 
@@ -901,14 +896,6 @@ public class MainActivity extends BaseARActivity
         requestRender();
 
     }
-
-    // public class ContextMenuFragment extends Fragment {
-    //     @Override
-    //     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    //         View root = inflater.inflate(R.layout.main, container, false);
-    //         registerForContextMenu(root.findViewById(R.id.glSurfaceView));
-    //         return root;
-    //     }
 
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
