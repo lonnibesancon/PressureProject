@@ -101,6 +101,7 @@ public class MainActivity extends BaseARActivity
     private ToggleButton tangibleToggle ;
     private ToggleButton touchToggle ;
 
+
     private boolean isTangibleOn = false ;
     private boolean isTouchOn = false;
     private boolean dataORplaneTangible = true ; //Data
@@ -108,8 +109,6 @@ public class MainActivity extends BaseARActivity
     private boolean isTangiblePressed = false ;
 
     
-    
-
     public Object lock = new Object() ;
 
     // FIXME: static?
