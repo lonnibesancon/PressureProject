@@ -113,7 +113,7 @@ public class MainActivity extends BaseARActivity
     private boolean dataORplaneTouch = true ;    //Data
     private boolean isTangiblePressed = false ;
 
-    private Button seedingBtn ;
+    
     
 
     public Object lock = new Object() ;
@@ -345,10 +345,6 @@ public class MainActivity extends BaseARActivity
         this.autoConstrainBtn = (Button) findViewById(R.id.autoConstrain);
         //this.autoConstrainBtn.setOnClickListener(this);
         this.autoConstrainBtn.setOnTouchListener(this);
-
-        this.seedingBtn = (Button) findViewById(R.id.seedingBtn);
-        this.seedingBtn.setOnTouchListener(this);
-
 
         touchToggle = (ToggleButton) findViewById(R.id.touchToggle);
         touchToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -1699,26 +1695,6 @@ public class MainActivity extends BaseARActivity
             int index = event.getActionIndex();
             //return true ;
         }
-
-        else if(v.getId() == R.id.seedingBtn){
-            if (event.getAction() == MotionEvent.ACTION_DOWN ){
-                fluidSettings.isSeeding = true ;
-                this.seedingBtn.setPressed(true);
-                this.nbOfFingersButton+=1;
-            }
-            else if(event.getAction() == MotionEvent.ACTION_UP ){
-                fluidSettings.isSeeding = false ;
-                this.seedingBtn.setPressed(false);
-                FluidMechanics.resetParticles();
-                this.nbOfFingersButton-=1 ;
-                removedButtonFinger = true ;
-                client.seedPoint = "-1000000.0;-1000000.0;-1000000.0";
-                client.valuesupdated = true ;
-            }
-            updateDataSettings();
-            //return true ;
-        }
-
 
 
         //Log.d(TAG,"X = "+fluidSettings.considerX+"  -- Y = "+fluidSettings.considerY
