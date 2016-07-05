@@ -57,7 +57,6 @@ extern "C" {
 
 	// JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initQCAR(JNIEnv* env, jobject obj);
 
-	JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_releaseParticles(JNIEnv* env, jobject obj);
 
 	JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_buttonPressed(JNIEnv* env, jobject obj);
 	JNIEXPORT jfloat JNICALL Java_fr_limsi_ARViewer_FluidMechanics_buttonReleased(JNIEnv* env, jobject obj);
@@ -74,7 +73,6 @@ extern "C" {
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_addFinger(JNIEnv* env, jobject obj, jfloat x, jfloat y, jint fingerID);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_removeFinger(JNIEnv* env, jobject obj, jint fingerID);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_reset(JNIEnv* env, jobject obj);
-    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_resetParticles(JNIEnv* env, jobject obj);
 }
 
 // (end of JNI interface)
@@ -105,7 +103,6 @@ struct FluidMechanics::Impl
 
 	// void detectObjects(ARMarkerInfo* markerInfo, int markerNum);
 	void setMatrices(const Matrix4& volumeMatrix, const Matrix4& stylusMatrix);
-	void updateSlicePlanes();
 	void updateMatrices();
 
 	// (GL context)
@@ -116,7 +113,6 @@ struct FluidMechanics::Impl
 	void buttonPressed();
 	float buttonReleased();
 
-	void releaseParticles();
 	Vector3 particleJitter();
 	void integrateParticleMotion(Particle& p);
 
@@ -132,12 +128,10 @@ struct FluidMechanics::Impl
 	void addFinger(float x, float y, int fingerID);
 	void removeFinger(int fingerID);
 	void computeFingerInteraction();
-	bool computeSeedingPlacement();
 	void reset();
 	int getFingerPos(int fingerID);
 	void onTranslateBar(float pos);
 	bool checkPosition();
-	void resetParticles();
 
 	Vector3 posToDataCoords(const Vector3& pos); // "pos" is in eye coordinates
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
@@ -186,15 +180,7 @@ struct FluidMechanics::Impl
 	vtkSmartPointer<vtkImageData> velocityData;
 
 	typedef LinearMath::Vector3<int> DataCoords;
-	// std::array<Particle, 10> particles;
-	// std::array<Particle, 50> particles;
-	// std::array<Particle, 100> particles;
-	Synchronized<std::array<Particle, 200>> particles;
-	timespec particleStartTime;
-	static constexpr float particleSpeed = 0.15f;
 	// static constexpr int particleReleaseDuration = 500; // ms
-	static constexpr int particleReleaseDuration = 700; // ms
-	static constexpr int particleStallDuration = 1000; // ms
 
 	// static constexpr float stylusEffectorDist = 20.0f;
 	static constexpr float stylusEffectorDist = 24.0f;
@@ -252,8 +238,6 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 
 	
 	targetId = 0 ;
-	for (Particle& p : particles)
-		p.valid = false;
 }
 
 void FluidMechanics::Impl::reset(){
@@ -264,8 +248,6 @@ void FluidMechanics::Impl::reset(){
 	currentDataPos = Vector3(0,0,400);
 	buttonIsPressed = false ;
 
-	for (Particle& p : particles)
-		p.valid = false;
 
 	setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400)),Matrix4::makeTransform(Vector3(0, 0, 400)));
 	
@@ -335,15 +317,6 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 {
 	// // Unload mesh data
 	// mesh.reset();
-
-	synchronized (particles) {
-		// Unload velocity data
-		velocityData = nullptr;
-
-		// Delete particles
-		for (Particle& p : particles)
-			p.valid = false;
-	}
 
 	VTKOutputWindow::install();
 
@@ -511,130 +484,6 @@ float FluidMechanics::Impl::buttonReleased()
 		return 0.0f;
 	}*/
 	return 0 ;
-}
-
-void FluidMechanics::Impl::resetParticles(){
-	LOGD("Reset Particle case");
-	for (Particle& p : particles) {
-		p.pos = Vector3(0,0,0);
-		p.delayMs = 0 ;
-		p.stallMs = 0;
-		p.valid = false ;
-	}		
-	seedingPoint = Vector3(-1000000,-1000000,-1000000);
-}
-
-void FluidMechanics::Impl::releaseParticles()
-{
-	/*if (!velocityData || !state->tangibleVisible || !state->stylusVisible || 
-		(interactionMode!=seedPointTangible && interactionMode!=seedPointTouch && 
-		interactionMode != seedPointHybrid )){
-
-		LOGD("Cannot place Seed");
-		seedPointPlacement = false ;
-		return;
-	}*/
-
-
-		
-	//LOGD("Conditions met to place particles");
-	Matrix4 smm;
-	synchronized (state->stylusModelMatrix) {
-		smm = state->stylusModelMatrix;
-	}
-	//LOGD("Got stylus Model Matrix");
-	//const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
-	//Vector3 dataPos = posToDataCoords(smm * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor) * Vector3::zero());
-	Vector3 dataPos = posToDataCoords(seedingPoint) ;
-	if (dataPos.x < 0 || dataPos.y < 0 || dataPos.z < 0
-	    || dataPos.x >= dataDim[0] || dataPos.y >= dataDim[1] || dataPos.z >= dataDim[2])
-	{
-		LOGD("outside bounds");
-		seedPointPlacement = false ;
-		return;
-	}
-	LOGD("Coords correct");
-	DataCoords coords(dataPos.x, dataPos.y, dataPos.z);
-
-	clock_gettime(CLOCK_REALTIME, &particleStartTime);
-
-	int delay = 0;
-	LOGD("Starting Particle Computation");
-	synchronized (particles) {
-		for (Particle& p : particles) {
-			p.pos = Vector3(coords.x, coords.y, coords.z) + particleJitter();
-			p.lastTime = particleStartTime;
-			p.delayMs = delay;
-			delay += particleReleaseDuration/particles.size();
-			p.stallMs = 0;
-			p.valid = true;
-		}
-	}
-
-	seedPointPlacement = true ;
-}
-
-void FluidMechanics::Impl::integrateParticleMotion(Particle& p)
-{
-	if (!p.valid)
-		return;
-
-	// Pause particle motion when the data is not visible
-	if (!state->tangibleVisible)
-		return;
-
-	timespec now;
-	clock_gettime(CLOCK_REALTIME, &now);
-
-	int elapsedMs = (now.tv_sec - p.lastTime.tv_sec) * 1000
-		+ (now.tv_nsec - p.lastTime.tv_nsec) / 1000000;
-
-	p.lastTime = now;
-
-	if (p.delayMs > 0) {
-		p.delayMs -= elapsedMs;
-		if (p.delayMs < 0)
-			elapsedMs = -p.delayMs;
-		else
-			return;
-	}
-
-	if (p.stallMs > 0) {
-		p.stallMs -= elapsedMs;
-		if (p.stallMs < 0)
-			p.valid = false;
-		return;
-	}
-
-	vtkDataArray* vectors = velocityData->GetPointData()->GetVectors();
-
-	while (elapsedMs > 0) {
-		--elapsedMs;
-
-		DataCoords coords = DataCoords(p.pos.x, p.pos.y, p.pos.z);
-
-		if (coords.x < 0 || coords.y < 0 || coords.z < 0
-		    || coords.x >= dataDim[0] || coords.y >= dataDim[1] || coords.z >= dataDim[2])
-		{
-			// LOGD("particle moved outside bounds");
-			p.valid = false;
-			return;
-		}
-
-		double* v = vectors->GetTuple3(coords.z*(dataDim[0]*dataDim[1]) + coords.y*dataDim[0] + coords.x);
-		// LOGD("v = %f, %f, %f", v[0], v[1], v[2]);
-
-		// Vector3 vel(v[0], v[1], v[2]);
-		Vector3 vel(v[1], v[0], v[2]); // XXX: workaround for a wrong data orientation
-
-		if (!vel.isNull()) {
-			p.pos += vel * particleSpeed;
-		} else {
-			// LOGD("particle stopped");
-			p.stallMs = particleStallDuration;
-			break;
-		}
-	}
 }
 
 bool FluidMechanics::Impl::computeCameraClipPlane(Vector3& point, Vector3& normal)
@@ -847,18 +696,7 @@ Matrix4 filter(const Matrix4& in, const Matrix4& prev, float posWeight, float ro
 bool FluidMechanics::Impl::computeStylusClipPlane(Vector3& point, Vector3& normal)
 {
 #if 0
-	// static const float posWeight = 0.7f;
-	// static const float rotWeight = 0.8f;
-	static const float posWeight = 0.8f;
-	static const float rotWeight = 0.8f;
-
-	static bool wasVisible = false;
-	static Matrix4 prevMatrix;
-
-	if (!state->stylusVisible) {
-		wasVisible = false;
-		return false;
-	}
+	
 #else
 	if (!state->stylusVisible)
 		return false;
@@ -930,7 +768,6 @@ void FluidMechanics::Impl::setMatrices(const Matrix4& volumeMatrix, const Matrix
 		state->stylusModelMatrix = stylusMatrix;
 	}
 
-	updateSlicePlanes();
 }
 
 void FluidMechanics::Impl::setInteractionMode(int mode){
@@ -1031,67 +868,6 @@ bool intersectPlane(const Vector3& n, const Vector3& p0, const Vector3& l0, cons
  
     return false; 
 } 
-
-//Returns true if the seeding is successful
-bool FluidMechanics::Impl::computeSeedingPlacement(){
-	Vector2 currentPos ;
-
-	//The seeding button is pressed but no finger on the data and there are already particles
-	/*if(fingerPositions.size() == 0 && particles.size()!=0 && particles[0].valid && seedPointPlacement==false ){
-		LOGD("Reset Particle case");
-		for (Particle& p : particles) {
-			p.pos = Vector3(0,0,0);
-			p.delayMs = 0 ;
-			p.stallMs = 0;
-			p.valid = false ;
-		}		
-		return false;
-	}*/
-	if(fingerPositions.size()!=0){
-		synchronized(fingerPositions){
-			currentPos = Vector2(fingerPositions[0].x,fingerPositions[0].y);
-		}
-
-		//printAny(currentPos,"Current Pos Seeding");
-
-		//LOGD("Current Pos = %f --  %f",currentPos.x, currentPos.y);
-
-		//Put screen coordinate between -1 and 1, and inverse Y to correspond to OpenGL conventions
-		currentPos.x = (currentPos.x * 2 /screenW)-1 ;
-		currentPos.y = (currentPos.y * 2 /screenH)-1 ;
-		currentPos.y *= -1 ;
-
-		//LOGD("Current Pos -1/1 = %f --  %f",currentPos.x, currentPos.y);
-
-		//Get the world cornidates of the finger postion accoriding to the depth of the plane
-		Vector3 ray(currentPos.x, currentPos.y, 1);
-		ray = app->getProjMatrix().inverse() * ray ;
-		ray.normalize();
-		//printAny(ray, "RAY == ");
-		
-		float t ;
-		//printAny(sliceNormal, "SLice NOrmal =");
-		//printAny(slicePoint, "Slice Point = ");
-
-		bool success = intersectPlane(sliceNormal, slicePoint, Vector3::zero(),ray, t) ;
-
-		if(success){
-			//LOGD("SUCCESS");
-			//printAny(ray*t, "RAY * T = ");
-			//To save energy with less rendering and computation, we do not render the particles on the tablet
-			seedingPoint = ray*t ;
-			releaseParticles();
-			return true ;
-		}
-		else{
-			//LOGD("FAIL");
-			return false ;
-			
-		}
-	}
-	
-
-}
 
 void FluidMechanics::Impl::onTranslateBar(float pos){
 
@@ -1246,13 +1022,8 @@ void FluidMechanics::Impl::updateMatrices(){
 	Matrix4 slicem ;
 
 
-	if(settings->isSeeding && velocityData){
-		//LOGD("Seeding Case");
-		computeSeedingPlacement();
 
-	}
-
-	else if( interactionMode == dataTouch ||
+	if( interactionMode == dataTouch ||
 		interactionMode == planeTouch ||
 		interactionMode == dataTouchTangible ||
 		interactionMode == planeTouchTangible ||
@@ -1288,7 +1059,6 @@ void FluidMechanics::Impl::updateMatrices(){
 	
 	
 
-	updateSlicePlanes();
 
 }
 
@@ -1440,227 +1210,6 @@ void FluidMechanics::Impl::updateFingerPositions(float x, float y, int fingerID)
 	//LOGD("Finger %d has moved from %f -- %f     to     %f -- %f",fingerID,prevFingerPositions[position].x,prevFingerPositions[position].y, x, y);
 }
 
-
-void FluidMechanics::Impl::updateSlicePlanes()
-{
-	if(!data){
-		return ;
-	}
-	if (state->stylusVisible) {
-		if (state->tangibleVisible) { // <-- because of posToDataCoords()
-			// Effector 2
-			const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
-			Vector3 dataPos = posToDataCoords(state->stylusModelMatrix * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor) * Vector3::zero());
-
-			if (dataPos.x >= 0 && dataPos.y >= 0 && dataPos.z >= 0
-			    && dataPos.x < dataDim[0]*dataSpacing.x && dataPos.y < dataDim[1]*dataSpacing.y && dataPos.z < dataDim[2]*dataSpacing.z)
-			{
-				// const auto rayPlaneIntersection2 = [](const Vector3& rayPoint, const Vector3& rayDir, const Vector3& planePoint, const Vector3& planeNormal, float& t) -> bool {
-				// 	float dot = rayDir.dot(planeNormal);
-				// 	if (dot != 0) {
-				// 		t = -(rayPoint.dot(planeNormal) - planeNormal.dot(planePoint)) / dot;
-				// 		LOGD("rayPlaneIntersection2 %s %s %s %s => %f", Utility::toString(rayPoint).c_str(), Utility::toString(rayDir).c_str(), Utility::toString(planePoint).c_str(), Utility::toString(planeNormal).c_str(), t);
-				// 		return true;
-				// 	} else {
-				// 		LOGD("rayPlaneIntersection2 %s %s %s %s => [dot=%f]", Utility::toString(rayPoint).c_str(), Utility::toString(rayDir).c_str(), Utility::toString(planePoint).c_str(), Utility::toString(planeNormal).c_str(), dot);
-				// 		return false;
-				// 	}
-				// };
-				const auto rayAABBIntersection = [](const Vector3& rayPoint, const Vector3& rayDir, const Vector3& aabbMin, const Vector3& aabbMax, float& tmin, float& tmax) -> bool {
-					// http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-7-intersecting-simple-shapes/ray-box-intersection/
-					float tmin_ = (aabbMin.x - rayPoint.x) / rayDir.x;
-					float tmax_ = (aabbMax.x - rayPoint.x) / rayDir.x;
-					if (tmin_ > tmax_) std::swap(tmin_, tmax_);
-					float tymin = (aabbMin.y - rayPoint.y) / rayDir.y;
-					float tymax = (aabbMax.y - rayPoint.y) / rayDir.y;
-					if (tymin > tymax) std::swap(tymin, tymax);
-					if ((tmin_ > tymax) || (tymin > tmax_))
-						return false;
-					if (tymin > tmin_)
-						tmin_ = tymin;
-					if (tymax < tmax_)
-						tmax_ = tymax;
-					float tzmin = (aabbMin.z - rayPoint.z) / rayDir.z;
-					float tzmax = (aabbMax.z - rayPoint.z) / rayDir.z;
-					if (tzmin > tzmax) std::swap(tzmin, tzmax);
-					if ((tmin_ > tzmax) || (tzmin > tmax_))
-						return false;
-					if (tzmin > tmin_)
-						tmin_ = tzmin;
-					if (tzmax < tmax_)
-						tmax_ = tzmax;
-					if ((tmin_ > tmax) || (tmax_ < tmin)) return false;
-					if (tmin < tmin_) tmin = tmin_;
-					if (tmax > tmax_) tmax = tmax_;
-					// LOGD("tmin = %f, tmax = %f", tmin, tmax);
-					return true;
-				};
-
-
-				// Same as posToDataCoords(), but for directions (not positions)
-				// (direction goes from the effector to the stylus: +X axis)
-				Vector3 dataDir = state->modelMatrix.transpose().get3x3Matrix() * state->stylusModelMatrix.inverse().transpose().get3x3Matrix() * Vector3::unitX();
-
-				// static const float min = 0.0f;
-				// const float max = settings->zoomFactor;
-				// float t;
-				float tmin = 0, tmax = 10000;
-				synchronized (effectorIntersection) {
-					// effectorIntersection = Vector3::zero();
-					effectorIntersectionValid = false;
-					
-					if (rayAABBIntersection(dataPos, dataDir, Vector3::zero(), Vector3(dataDim[0], dataDim[1], dataDim[2])*dataSpacing, tmin, tmax) && tmax > 0) {
-						effectorIntersection = dataCoordsToPos(dataPos + dataDir*tmax);
-						// effectorIntersectionNormal = state->modelMatrix.transpose().get3x3Matrix() * getAABBNormalAt(dataPos + dataDir*tmax, Vector3::zero(), Vector3(dataDim[0], dataDim[1], dataDim[2])*dataSpacing);
-						// LOGD("intersection = %s", Utility::toString(posToDataCoords(effectorIntersection)).c_str());
-						// LOGD("intersection normal = %s", Utility::toString(getAABBNormalAt(dataPos + dataDir*tmax, Vector3::zero(), Vector3(dataDim[0], dataDim[1], dataDim[2])*dataSpacing)).c_str());
-						effectorIntersectionValid = true;
-					}
-				}
-
-
-				if (buttonIsPressed) {
-					// settings->showSurface = true;
-					settings->surfacePreview = true;
-
-					vtkNew<vtkPoints> points;
-					points->InsertNextPoint(dataPos.x, dataPos.y, dataPos.z);
-					vtkNew<vtkPolyData> polyData;
-					polyData->SetPoints(points.GetPointer());
-					probeFilter->SetInputData(polyData.GetPointer());
-					probeFilter->Update();
-
-					vtkDataArray* scalars = probeFilter->GetOutput()->GetPointData()->GetScalars();
-					android_assert(scalars);
-					unsigned int num = scalars->GetNumberOfTuples();
-					android_assert(num > 0);
-					double value = scalars->GetComponent(0, 0);
-					static double prevValue = 0.0;
-					if (prevValue != 0.0)
-						value = lowPassFilter(value, prevValue, 0.5f);
-					prevValue = value;
-					double range[2] = { volume->getMinValue(), volume->getMaxValue() };
-					// LOGD("probed value = %f (range = %f / %f)", value, range[0], range[1]);
-					settings->surfacePercentage = (value - range[0]) / (range[1] - range[0]);
-
-					// NOTE: updateSurfacePreview cannot be used to update isosurfaceLow
-					// from settings->surfacePercentage, since isosurfaceLow and isosurface
-					// have different value ranges, hence expect different percentages.
-					// updateSurfacePreview();
-
-					// Directly use setValue() instead
-					synchronized_if(isosurfaceLow) {
-						isosurfaceLow->setValue(value);
-					}
-				}
-			} else {
-				effectorIntersectionValid = false;
-
-				// // settings->showSurface = false;
-				// settings->showSurface = true;
-				// settings->surfacePreview = true;
-			}
-		}
-	}
-
-
-
-	bool clipPlaneSet = false;
-
-	if (settings->showSlice && slice) {
-		switch (settings->sliceType) {
-			case SLICE_CAMERA:
-				clipPlaneSet = computeCameraClipPlane(slicePoint, sliceNormal);
-				break;
-
-			case SLICE_AXIS:
-				clipPlaneSet = computeAxisClipPlane(slicePoint, sliceNormal);
-				break;
-
-			case SLICE_STYLUS:
-				clipPlaneSet = computeStylusClipPlane(slicePoint, sliceNormal);
-				break;
-		}
-	}
-
-	if (clipPlaneSet) {
-		synchronized_if(isosurface) { isosurface->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
-		synchronized_if(isosurfaceLow) { isosurfaceLow->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
-		synchronized_if(volume) { volume->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
-
-		// pt: data space
-		// dir: eye space
-		const auto rayPlaneIntersection = [this](const Vector3& pt, const Vector3& dir, float& t) -> bool {
-			// float dot = dir.dot(posToDataCoords(sliceNormal));
-			// float dot = dataCoordsToPos(dir).dot(sliceNormal);
-			float dot = dir.dot(sliceNormal);
-			if (dot == 0)
-				return false;
-			// t = -(pt.dot(posToDataCoords(sliceNormal)) - sliceNormal.dot(slicePoint)) / dot;
-			t = -(dataCoordsToPos(pt).dot(sliceNormal) - sliceNormal.dot(slicePoint)) / dot;
-			// t = -(pt.dot(sliceNormal) - sliceNormal.dot(slicePoint)) / dot;
-			// LOGD("t = %f", t);
-			return true;
-		};
-
-
-		// Slice-cube intersection
-		float t;
-		Vector3 dir;
-		synchronized(slicePoints) {
-			slicePoints.clear();
-
-			// dir = Vector3(dataDim[0]*dataSpacing.x, 0, 0);
-			static const float min = 0.0f;
-
-			const float max = settings->zoomFactor;// * settings->zoomFactor;
-
-			// static const float max = 2*settings->zoomFactor*state->computedZoomFactor;
-			// LOGD("%f %f %d %f", settings->zoomFactor, state->computedZoomFactor, dataDim[0], dataSpacing.x);
-
-			// Same as dataCoordsToPos(), but for directions (not positions)
-			dir = state->modelMatrix.inverse().transpose().get3x3Matrix() * (Vector3(dataDim[0]*dataSpacing.x, 0, 0));// / settings->zoomFactor);
-
-			if (rayPlaneIntersection(Vector3(0, 0, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, 0, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(0, dataDim[1]*dataSpacing.y, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, dataDim[1]*dataSpacing.y, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(0, 0, dataDim[2]*dataSpacing.z), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, 0, dataDim[2]*dataSpacing.z)) + dir*t);
-			if (rayPlaneIntersection(Vector3(0, dataDim[1]*dataSpacing.y, dataDim[2]*dataSpacing.z), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, dataDim[1]*dataSpacing.y, dataDim[2]*dataSpacing.z)) + dir*t);
-
-			// dir = Vector3(0, dataDim[1]*dataSpacing.y, 0);
-			dir = state->modelMatrix.inverse().transpose().get3x3Matrix() * (Vector3(0, dataDim[1]*dataSpacing.y, 0));// / settings->zoomFactor);
-			if (rayPlaneIntersection(Vector3(0, 0, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, 0, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(dataDim[0]*dataSpacing.x, 0, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(dataDim[0]*dataSpacing.x, 0, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(0, 0, dataDim[2]*dataSpacing.z), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, 0, dataDim[2]*dataSpacing.z)) + dir*t);
-			if (rayPlaneIntersection(Vector3(dataDim[0]*dataSpacing.x, 0, dataDim[2]*dataSpacing.z), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(dataDim[0]*dataSpacing.x, 0, dataDim[2]*dataSpacing.z)) + dir*t);
-
-			// dir = Vector3(0, 0, dataDim[2]*dataSpacing.z);
-			dir = state->modelMatrix.inverse().transpose().get3x3Matrix() * (Vector3(0, 0, dataDim[2]*dataSpacing.z));// / settings->zoomFactor);
-			if (rayPlaneIntersection(Vector3(0, 0, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, 0, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(dataDim[0]*dataSpacing.x, 0, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(dataDim[0]*dataSpacing.x, 0, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(0, dataDim[1]*dataSpacing.y, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(0, dataDim[1]*dataSpacing.y, 0)) + dir*t);
-			if (rayPlaneIntersection(Vector3(dataDim[0]*dataSpacing.x, dataDim[1]*dataSpacing.y, 0), dir, t) && t >= min && t <= max)
-				slicePoints.push_back(dataCoordsToPos(Vector3(dataDim[0]*dataSpacing.x, dataDim[1]*dataSpacing.y, 0)) + dir*t);
-
-			// LOGD("slicePoints.size() = %d", slicePoints.size());
-		}
-	} else {
-		synchronized_if(isosurface) { isosurface->clearClipPlane(); }
-		synchronized_if(isosurfaceLow) { isosurfaceLow->clearClipPlane(); }
-		synchronized_if(volume) { volume->clearClipPlane(); }
-	}
-}
-
 // (GL context)
 void FluidMechanics::Impl::renderObjects()
 {
@@ -1700,75 +1249,6 @@ void FluidMechanics::Impl::renderObjects()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
-
-	/*if (settings->clipDist > 0.0f) {
-		// Set a depth value for the slicing plane
-		Matrix4 trans = Matrix4::identity();
-		// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
-		trans[3][2] = app->getDepthValue(sliceDepth);
-		// LOGD("%s", Utility::toString(trans).c_str());
-
-		trans[1][1] *= -1; // flip the texture vertically, because of "orthoProjMatrix"
-
-		synchronized(slice) {
-			slice->setOpaque(false);
-			slice->render(app->getOrthoProjMatrix(), trans);
-		}
-	}*/
-
-	
-	/*if (false && state->stylusVisible && cube ) {
-		glColorMask(false, false, false, false);
-		glDepthMask(true);
-
-
-			synchronized (state->stylusModelMatrix) {
-				// if (!isRfduinoStylus) {
-					cube->render(proj, state->stylusModelMatrix
-					             * Matrix4::makeTransform(
-						             Vector3(10.0, 0, 10.0),
-						             Quaternion::identity(),
-						             Vector3(59, 40, 3)/2
-					             ));
-					cube->render(proj, state->stylusModelMatrix
-					             * Matrix4::makeTransform(
-						             Vector3(10.0, -10.0, -5.0),
-						             // Quaternion(Vector3::unitX(),  2.146),
-						             Quaternion(Vector3::unitX(),  2.09),
-						             Vector3(59, 40, 3)/2
-					             ));
-					cube->render(proj, state->stylusModelMatrix
-					             * Matrix4::makeTransform(
-						             Vector3(10.0, 10.0, -5.0),
-						             // Quaternion(Vector3::unitX(), -2.146),
-						             Quaternion(Vector3::unitX(), -2.09),
-						             Vector3(59, 40, 3)/2
-					             ));
-					// Handle
-					if (cylinder) {
-						cylinder->render(proj, state->stylusModelMatrix
-						                 * Matrix4::makeTransform(
-							                 Vector3(75.0, 0.0, 0.0),
-							                 Quaternion(Vector3::unitY(), M_PI/2),
-							                 Vector3(0.01f, 0.01f, 0.017f)*2
-						                 ));
-					}
-			
-			}
-
-		glColorMask(true, true, true, true);
-	}
-
-	if (settings->showStylus && state->stylusVisible && cube) {
-		glDepthMask(true);
-		glEnable(GL_CULL_FACE);
-
-		Matrix4 smm;
-		synchronized(state->stylusModelMatrix) {
-			smm = state->stylusModelMatrix;
-		}
-
-	}*/
 
 	// LOGD("render 4");
 
@@ -1929,25 +1409,6 @@ JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_loadVelocityDat
 	}
 }
 
-JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_releaseParticles(JNIEnv* env, jobject obj)
-{
-	try {
-		// LOGD("(JNI) [FluidMechanics] releaseParticles()");
-
-		if (!App::getInstance())
-			throw std::runtime_error("init() was not called");
-
-		if (App::getType() != App::APP_TYPE_FLUID)
-			throw std::runtime_error("Wrong application type");
-
-		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
-		android_assert(instance);
-		instance->releaseParticles();
-
-	} catch (const std::exception& e) {
-		throwJavaException(env, e.what());
-	}
-}
 
 JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getSettings(JNIEnv* env, jobject obj, jobject settingsObj)
 {
@@ -2222,24 +1683,6 @@ JNIEXPORT void Java_fr_limsi_ARViewer_FluidMechanics_removeFinger(JNIEnv* env, j
 	}
 }
 
-JNIEXPORT void Java_fr_limsi_ARViewer_FluidMechanics_resetParticles(JNIEnv* env, jobject obj){
-	try {
-
-		if (!App::getInstance())
-			throw std::runtime_error("init() was not called");
-
-		if (App::getType() != App::APP_TYPE_FLUID)
-			throw std::runtime_error("Wrong application type");
-
-		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
-		android_assert(instance);
-		instance->resetParticles();
-
-	} catch (const std::exception& e) {
-		throwJavaException(env, e.what());
-	}
-}
-
 
 FluidMechanics::FluidMechanics(const InitParams& params)
  : NativeApp(params, SettingsPtr(new FluidMechanics::Settings), StatePtr(new FluidMechanics::State)),
@@ -2264,11 +1707,6 @@ bool FluidMechanics::loadVelocityDataSet(const std::string& fileName)
 	return impl->loadVelocityDataSet(fileName);
 }
 
-void FluidMechanics::releaseParticles()
-{
-	impl->releaseParticles();
-}
-
 void FluidMechanics::buttonPressed()
 {
 	impl->buttonPressed();
@@ -2285,9 +1723,6 @@ void FluidMechanics::rebind()
 	impl->rebind();
 }
 
-void FluidMechanics::resetParticles(){
-	impl->resetParticles();
-}
 
 void FluidMechanics::setMatrices(const Matrix4& volumeMatrix, const Matrix4& stylusMatrix)
 {
