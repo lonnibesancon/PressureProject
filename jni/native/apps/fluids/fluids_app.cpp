@@ -2130,6 +2130,21 @@ void FluidMechanics::Impl::renderObjects()
 			}
 		}
 
+		// Render particles
+		synchronized (particles) {
+			for (Particle& p : particles) {
+				if (!p.valid)
+					continue;
+				integrateParticleMotion(p);
+				if (!p.valid || p.delayMs > 0)
+					continue;
+				Vector3 pos = p.pos;
+				pos -= Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
+				// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.3f)));
+				// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.2f)));
+				particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
+			}
+		}
 
 		// NOTE: must be rendered before "slice" (because of
 		// transparency sorting)
@@ -2172,52 +2187,18 @@ void FluidMechanics::Impl::renderObjects()
 			}
 		}
 
-		if (slice && settings->showSlice) {
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDisable(GL_CULL_FACE);
-			glDepthMask(true); // requires "discard" in the shader where alpha == 0
-
-			switch (settings->sliceType) {
-				case SLICE_CAMERA: {
-					if (settings->clipDist > 0.0f) {
-						// Set a depth value for the slicing plane
-						Matrix4 trans = Matrix4::identity();
-						// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
-						trans[3][2] = app->getDepthValue(sliceDepth);
-						// LOGD("%s", Utility::toString(trans).c_str());
-
-						trans[1][1] *= -1; // flip the texture vertically, because of "orthoProjMatrix"
-
-						synchronized(slice) {
-							slice->setOpaque(false);
-							slice->render(app->getOrthoProjMatrix(), trans);
-						}
-					}
-
-					break;
-				}
-
-				case SLICE_AXIS:
-				case SLICE_STYLUS: {
-					if (settings->sliceType != SLICE_STYLUS || state->stylusVisible) {
-						Matrix4 s2mm;
-						synchronized(state->sliceModelMatrix) {
-							s2mm = state->sliceModelMatrix;
-						}
-
-						synchronized(slice) {
-							slice->setOpaque(true || slice->isEmpty() /*settings->sliceType == SLICE_STYLUS || slice->isEmpty()*/);
-							slice->render(proj, s2mm);
-						}
-
-					}
-
-					break;
-				}
-			}
-		}
-
+		// // Render the volume after the slicing plane when the plane
+		// // normal is facing the screen
+		// if (settings->showVolume && sliceDot > 0) {
+		// 	synchronized_if(volume) {
+		// 		glDepthMask(false);
+		// 		glEnable(GL_BLEND);
+		// 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
+		// 		// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
+		// 		glDisable(GL_CULL_FACE);
+		// 		volume->render(proj, mm);
+		// 	}
+		// }
 	}
 
 	
