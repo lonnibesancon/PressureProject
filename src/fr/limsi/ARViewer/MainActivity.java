@@ -91,7 +91,7 @@ import com.google.atap.tangoservice.*;
 // import com.lannbox.rfduinotest.RFduinoService;
 
 public class MainActivity extends BaseARActivity
- implements View.OnTouchListener, GestureDetector.OnDoubleTapListener, Tango.OnTangoUpdateListener, SensorEventListener, InteractionMode, OnClickListener, BluetoothAdapter.LeScanCallback //, View.OnLongClickListener
+ implements View.OnTouchListener, Tango.OnTangoUpdateListener, SensorEventListener, InteractionMode, OnClickListener, BluetoothAdapter.LeScanCallback //, View.OnLongClickListener, GestureDetector.OnDoubleTapListener
     // , CameraPreview.SizeCallback
 {
     private static final String TAG = Config.APP_TAG;
@@ -706,11 +706,7 @@ public class MainActivity extends BaseARActivity
             if(x >= (0 + Math.PI/8) && x <= (Math.PI/2 - Math.PI/8) ){
                 //Log.d(TAG,"YYYYYYYYYYYYYYYYYYYYYY");
             }
-
-         
-       } 
-
-       }*/
+       }
        
    }
 
