@@ -326,10 +326,8 @@ public class MainActivity extends BaseARActivity
                 
                 if (isChecked) {
                     isTouchOn = true ;
-                    dataORplaneTouchToggle.setEnabled(true);
                 } else {
                     isTouchOn = false ;
-                    dataORplaneTouchToggle.setEnabled(false);
                 }
                 setInteractionMode();
             }
@@ -396,53 +394,24 @@ public class MainActivity extends BaseARActivity
                 Log.d(TAG,"No Interaction");
             }
             else{
-                if(dataORplaneTouch == false){
-                    interactionMode = planeTouch ;
-                    Log.d(TAG,"planeTouch");
-                    //fluidSettings.interactionMode = planeTouch ;
-                }
-                else{
-                    interactionMode = dataTouch ;
-                    Log.d(TAG,"dataTouch");
-                    //fluidSettings.interactionMode = dataTouch ;
-                }
+                interactionMode = dataTouch ;
+                Log.d(TAG,"dataTouch");
+                //fluidSettings.interactionMode = dataTouch ;
             }
         }
 
         else{
             if(isTouchOn == false){
-                if(dataORplaneTangible == false){
-                    interactionMode = planeTangible ;
-                    Log.d(TAG,"planeTangible");
-                    //fluidSettings.interactionMode = planeTangible ;
-                }
-                else{
-                    interactionMode = dataTangible ;
-                    Log.d(TAG,"dataTangible");
-                    //fluidSettings.interactionMode = dataTangible ;
-                }
+
+                interactionMode = dataTangible ;
+                Log.d(TAG,"dataTangible");
+                //fluidSettings.interactionMode = dataTangible ;
             }
             else{
-                if(dataORplaneTangible == false && dataORplaneTouch == false){
-                    interactionMode = planeTouchTangible ;
-                    Log.d(TAG,"planeTouchTangible");
-                    //fluidSettings.interactionMode = planeTouchTangible ;
-                }
-                else if(dataORplaneTangible == true && dataORplaneTouch == true){
-                    interactionMode = dataTouchTangible ;
-                    Log.d(TAG,"dataTouchTangible");
-                    //fluidSettings.interactionMode = dataTouchTangible ;
-                }
-                else if(dataORplaneTangible == false && dataORplaneTouch == true){
-                    interactionMode = dataPlaneTouchTangible ;
-                    Log.d(TAG,"dataPlaneTouchTangible");
-                    //fluidSettings.interactionMode = dataPlaneTangibleTouch ;
-                }
-                else if(dataORplaneTangible == true  && dataORplaneTouch == false){
-                    interactionMode = dataPlaneTangibleTouch ;
-                    Log.d(TAG,"dataPlaneTangibleTouch");
-                    //fluidSettings.interactionMode = dataPlaneTangibleTouch ;
-                }
+
+                interactionMode = dataTouchTangible ;
+                Log.d(TAG,"dataTouchTangible");
+                //fluidSettings.interactionMode = dataTouchTangible ;
             }
         }
 

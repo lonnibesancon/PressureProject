@@ -114,7 +114,6 @@ struct FluidMechanics::Impl
 	float buttonReleased();
 
 	Vector3 particleJitter();
-	void integrateParticleMotion(Particle& p);
 
 	bool computeCameraClipPlane(Vector3& point, Vector3& normal);
 	bool computeAxisClipPlane(Vector3& point, Vector3& normal);
