@@ -2130,21 +2130,6 @@ void FluidMechanics::Impl::renderObjects()
 			}
 		}
 
-		// Render particles
-		synchronized (particles) {
-			for (Particle& p : particles) {
-				if (!p.valid)
-					continue;
-				integrateParticleMotion(p);
-				if (!p.valid || p.delayMs > 0)
-					continue;
-				Vector3 pos = p.pos;
-				pos -= Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
-				// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.3f)));
-				// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.2f)));
-				particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
-			}
-		}
 
 		// NOTE: must be rendered before "slice" (because of
 		// transparency sorting)
@@ -2233,18 +2218,6 @@ void FluidMechanics::Impl::renderObjects()
 			}
 		}
 
-		// // Render the volume after the slicing plane when the plane
-		// // normal is facing the screen
-		// if (settings->showVolume && sliceDot > 0) {
-		// 	synchronized_if(volume) {
-		// 		glDepthMask(false);
-		// 		glEnable(GL_BLEND);
-		// 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-		// 		// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
-		// 		glDisable(GL_CULL_FACE);
-		// 		volume->render(proj, mm);
-		// 	}
-		// }
 	}
 
 	

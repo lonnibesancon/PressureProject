@@ -98,7 +98,6 @@ public class MainActivity extends BaseARActivity
     private static final boolean DEBUG = Config.DEBUG;
 
     private ImageButton tangibleBtn ;
-    //private Button sliceBtn ;
     private Button constrainXBtn ;
     private Button constrainYBtn ;
     private Button constrainZBtn ;
