@@ -130,7 +130,6 @@ struct FluidMechanics::Impl
 	void reset();
 	int getFingerPos(int fingerID);
 	void onTranslateBar(float pos);
-	bool checkPosition();
 
 	Vector3 posToDataCoords(const Vector3& pos); // "pos" is in eye coordinates
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
@@ -252,21 +251,6 @@ void FluidMechanics::Impl::reset(){
 	
 }
 
-bool FluidMechanics::Impl::checkPosition(){
-	Matrix4 targetData = dataMatrices[targetId];
-	Matrix4 targetSlice = planeMatrices[targetId];
-
-	Vector3 posData(targetData[3][0],targetData[3][1],targetData[3][2]);
-	Vector3 posSlice(targetSlice[3][0],targetSlice[3][1],targetSlice[3][2]);
-
-	Vector3 diffData = posData - currentDataPos ;
-	Vector3 diffSlice = posSlice - currentSlicePos ;
-	float distData = sqrt(diffData.x * diffData.x + diffData.y * diffData.y + diffData.z * diffData.z);
-	float distSlice = sqrt(diffSlice.x * diffSlice.x + diffSlice.y * diffSlice.y + diffSlice.z * diffSlice.z);
-
-	LOGD("Distance to data target = %f",distData);
-	LOGD("Distance to slice target = %f",distSlice);
-}
 
 void FluidMechanics::Impl::rebind()
 {
@@ -472,16 +456,7 @@ void FluidMechanics::Impl::buttonPressed()
 float FluidMechanics::Impl::buttonReleased()
 {
 	tangoEnabled = false ;
-	/*buttonIsPressed = false;
 
-	settings->surfacePreview = false;
-	try {
-		updateSurfacePreview();
-		return settings->surfacePercentage;
-	} catch (const std::exception& e) {
-		LOGD("Exception: %s", e.what());
-		return 0.0f;
-	}*/
 	return 0 ;
 }
 
@@ -1196,36 +1171,10 @@ void FluidMechanics::Impl::updateFingerPositions(float x, float y, int fingerID)
 void FluidMechanics::Impl::renderObjects()
 {
 	updateMatrices();
-	//checkPosition();
 	const Matrix4 proj = app->getProjMatrix();
-	//printAny(seedingPoint,"Seeding Point = ");
-	//printAny(state->stylusModelMatrix, "Plane  = ");
 	//printAny(state->modelMatrix, "Model Matrix Object = ");
 	glEnable(GL_DEPTH_TEST);
 
-	// // XXX: test
-	// Matrix4 mm;
-	// synchronized(state->modelMatrix) {
-	// 	mm = state->modelMatrix;
-	// }
-	// glDisable(GL_BLEND);
-	// synchronized_if(isosurface) {
-	// 	glDepthMask(true);
-	// 	glDisable(GL_CULL_FACE);
-	// 	isosurface->render(proj, mm);
-	// }
-	// glEnable(GL_DEPTH_TEST);
-	// synchronized_if(volume) {
-	// 	// glDepthMask(false);
-	// 	glDepthMask(true);
-	// 	glEnable(GL_BLEND);
-	// 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-	// 	// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
-	// 	glDisable(GL_CULL_FACE);
-	// 	volume->render(proj, mm);
-	// }
-	//
-	// return; // XXX: test
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

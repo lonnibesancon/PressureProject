@@ -147,7 +147,7 @@ public class MainActivity extends BaseARActivity
     private static final float NS2S = 1.0f / 1000000000.0f;
     private long mLastTimestamp = 0;
 
-    private Client client ;
+    //private Client client ;
 
     private int interactionMode = nothing;
     private boolean tangibleModeActivated = false ;
@@ -265,8 +265,8 @@ public class MainActivity extends BaseARActivity
         fluidSettings.translatePlane = false ;
         //fluidSettings.dataORplane = 0 ; //Data 
 
-        this.client = new Client();
-        this.client.execute();
+        //this.client = new Client();
+        //this.client.execute();
         // Request an overlaid action bar (title bar)
         getWindow().requestFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
 
@@ -849,7 +849,7 @@ public class MainActivity extends BaseARActivity
         mDatasetLoaded = false;
 
         mDataSet = (id % 4);
-        client.dataset = mDataSet ;
+        //client.dataset = mDataSet ;
 
         // TODO: check exceptions + display error message
         // TODO: load in background?
@@ -887,7 +887,7 @@ public class MainActivity extends BaseARActivity
         }
 
         // We want the large display to change as well:
-        client.valuesupdated = true ; 
+        //client.valuesupdated = true ; 
 
 
         // Apply the computed zoom factor
@@ -1223,7 +1223,7 @@ public class MainActivity extends BaseARActivity
                 break;
 
             case R.id.change_IP:
-                changeIP();
+                //changeIP();
                 break ;
 
             case R.id.action_reset:
@@ -1519,19 +1519,19 @@ public class MainActivity extends BaseARActivity
         if (mView != null){
             //Log.d(TAG,"RequestRender");
             mView.requestRender();
-            client.setData(FluidMechanics.getData());
+            //client.setData(FluidMechanics.getData());
             //Log.d(TAG,"Request Render");
             //loggingFunction(); 
         }
             
    } 
 
-   public void changeIP(){
+   /*public void changeIP(){
         this.client.closeConnection = false ;
         this.client = new Client();
         this.client.execute();
 
-   }
+   }*/
 
    public void changeInteractionMode(int mode){
         this.interactionMode = mode ;
