@@ -46,6 +46,8 @@
 #include "interactionMode.h"
 // #include <QCAR/Image.h>
 
+#include <vtkXMLPolyDataReader.h>
+
 #define NEW_STYLUS_RENDER
 
 // ======================================================================
@@ -303,14 +305,21 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 
 	VTKOutputWindow::install();
 
+	std::string filename("teapot.vtp") ;
+	//const std::string ext = filename.substr(fileName.find_last_of(".") + 1);
 	const std::string ext = fileName.substr(fileName.find_last_of(".") + 1);
-
 	if (ext == "vtk")
 		data = loadTypedDataSet<vtkDataSetReader>(fileName);
 	else if (ext == "vti")
 		data = loadTypedDataSet<vtkXMLImageDataReader>(fileName);
 	else
-		throw std::runtime_error("Error loading data: unknown extension: \"" + ext + "\"");
+
+		#if 0
+			throw std::runtime_error("Error loading data: unknown extension: \"" + ext + "\"");
+		#else
+			data = loadTypedDataSet<vtkXMLPolyDataReader>(fileName);
+		#endif
+
 
 	data->GetDimensions(dataDim);
 
