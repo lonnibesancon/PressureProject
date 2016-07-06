@@ -11,7 +11,7 @@ public:
 	Target();
 	Target(Vector3 pos, Quaternion q);
 
-	Quaternion 	ComputeOrientationDifference(Quaternion q)`;
+	Quaternion 	ComputeOrientationDifference(Quaternion q);
 	Vector3 	ComputeEuclideanDistance(Vector3 t);
 
 private:

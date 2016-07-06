@@ -1,7 +1,7 @@
 #include "target.h"
 
 Target::Target(){
-	orientation = Quaternion(Vector3::unitX(), M_PI));
+	orientation = Quaternion(Vector3::unitX(), M_PI);
 	position = Vector3::zero();
 }
 
@@ -11,7 +11,7 @@ Target::Target(Vector3 pos, Quaternion q){
 }
 
 Vector3 Target::ComputeEuclideanDistance(Vector3 t){
-	return (pos - t) ;
+	return (position - t) ;
 }
 
 Quaternion Target::ComputeOrientationDifference(Quaternion q){
