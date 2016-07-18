@@ -21,7 +21,7 @@
  *
  */
 
-package fr.limsi.ARViewer;
+package com.example.lonnibesancon.myapplication;
 
 import android.Manifest;
 import android.app.Service;

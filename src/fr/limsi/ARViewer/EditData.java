@@ -1,4 +1,4 @@
-package fr.limsi.ARViewer;
+package com.example.lonnibesancon.myapplication;
 
 import android.content.Context;
 import android.text.Editable;

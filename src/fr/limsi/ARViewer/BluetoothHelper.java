@@ -1,4 +1,4 @@
-package fr.limsi.ARViewer;
+package com.example.lonnibesancon.myapplication;
 
 import android.bluetooth.BluetoothDevice;
 
@@ -37,9 +37,14 @@ public class BluetoothHelper {
                     output.append("\n  Advertisement Data: ")
                             .append(HexAsciiHelper.bytesToHex(scanRecord, i + 3, len));
 
+                    output.append("\n Try ASCII");
+
                     String ascii = HexAsciiHelper.bytesToAsciiMaybe(scanRecord, i + 3, len);
                     if (ascii != null) {
                         output.append(" (\"").append(ascii).append("\")");
+                    }
+                    else{
+                        output.append("\n Cannot convert to ASCII");
                     }
                     break;
             }
