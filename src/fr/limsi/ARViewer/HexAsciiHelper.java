@@ -1,4 +1,4 @@
-package com.example.lonnibesancon.myapplication;
+package fr.limsi.ARViewer;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,6 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import java.nio.charset.StandardCharsets;
+import android.util.Log;
 
 import java.util.regex.Pattern;
 
@@ -38,6 +40,59 @@ public class HexAsciiHelper {
         return bytesToAsciiMaybe(data, 0, data.length);
     }
 
+    private static String[] copyReverse(String[] tab){
+        for(int i = 0; i < tab.length / 2; i++)
+        {
+            String temp = tab[i];
+            tab[i] = tab[tab.length - i - 1];
+            tab[tab.length - i - 1] = temp;
+        }
+        return tab ;
+    }
+
+    public static int HexToInt(String hex){
+        String[] spl = hex.split(" ");
+        for(int i = 0 ; i < spl.length ; i++){
+            if(spl[i].length() > 2){        //Hardcoded because of weird values
+                int len = spl[i].length() ;
+                String tmp = new StringBuilder().append(spl[i].charAt(len-2)).append(spl[i].charAt(len-1)).toString();
+                spl[i] = tmp ;
+            }
+        }
+        spl = copyReverse(spl);
+        String result = "";
+        for(int i = 0 ; i < spl.length ; i++){
+            result += spl[i];
+        }
+        Long number = Long.parseLong(result,16);
+        int decimal = number != null ? number.intValue() : null;
+
+
+        return decimal;
+    }
+
+    public static float HexToFloat(String hex){
+        String[] spl = hex.split(" ");
+        for(int i = 0 ; i < spl.length ; i++){
+            if(spl[i].length() > 2){        //Hardcoded because of weird values
+                int len = spl[i].length() ;
+                String tmp = new StringBuilder().append(spl[i].charAt(len-2)).append(spl[i].charAt(len-1)).toString();
+                spl[i] = tmp ;
+            }
+        }
+        spl = copyReverse(spl);
+        String result = "";
+        for(int i = 0 ; i < spl.length ; i++){
+            result += spl[i];
+        }
+        Long i = Long.parseLong(result, 16);
+        float decimal = Float.intBitsToFloat(i.intValue());
+        Log.d("FloatValue",""+decimal);
+
+
+        return decimal ;
+    }
+
     public static String bytesToAsciiMaybe(byte[] data, int offset, int length) {
         StringBuilder ascii = new StringBuilder();
         boolean zeros = false;
@@ -59,6 +114,8 @@ public class HexAsciiHelper {
 
     public static byte[] hexToBytes(String hex) {
         ByteArrayBuffer bytes = new ByteArrayBuffer(hex.length() / 2);
+        //String str = new String(bytes, StandardCharsets.UTF_8);
+        //Log.d("BYTES",""+bytes);
         for (int i = 0; i < hex.length(); i++) {
             if (hex.charAt(i) == ' ') {
                 continue;

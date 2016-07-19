@@ -113,7 +113,7 @@ import com.google.atap.tangoservice.*;
 // import com.lannbox.rfduinotest.RFduinoService;
 
 public class MainActivity extends BaseARActivity
- implements View.OnTouchListener, Tango.OnTangoUpdateListener, SensorEventListener, InteractionMode, OnClickListener //,GestureDetector.OnDoubleTapListener, View.OnLongClickListener, BluetoothAdapter.LeScanCallback
+ implements View.OnTouchListener, Tango.OnTangoUpdateListener, SensorEventListener, InteractionMode, OnClickListener, BluetoothAdapter.LeScanCallback  //,GestureDetector.OnDoubleTapListener, View.OnLongClickListener, BluetoothAdapter.LeScanCallback
     // , CameraPreview.SizeCallback
 {
     private static final String TAG = Config.APP_TAG;
@@ -187,6 +187,7 @@ public class MainActivity extends BaseARActivity
     private int nbOfFingers = 0;
     private int nbOfFingersButton = 0 ;
     private int nbOfResets = 0 ;
+    private int pId = 0 ;
 
     private final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);;
 
@@ -197,12 +198,49 @@ public class MainActivity extends BaseARActivity
     private boolean autoConstraint ;
     private boolean dataOrTangibleValue = true ;
     
+    /*** BLE PART***/
+    // State machine
+    final private static int STATE_BLUETOOTH_OFF = 1;
+    final private static int STATE_DISCONNECTED = 2;
+    final private static int STATE_CONNECTING = 3;
+    final private static int STATE_CONNECTED = 4;
 
-    private TextView bluetoothState ;
+    private TextView bluetoothOverlay ;
 
+    private int state;
 
-    public int pId = -1 ;
-    private boolean fileOpened = false ;
+    private boolean scanStarted;
+    private boolean scanning;
+
+    private BluetoothAdapter bluetoothAdapter;
+    private BluetoothDevice bluetoothDevice;
+
+    private RFduinoService rfduinoService;
+
+    private boolean areReceiverUnregistered = false ;
+
+    private Button enableBluetoothButton;
+    private TextView scanStatusText;
+    private Button scanButton;
+    private TextView deviceInfoText;
+    private TextView connectionStatusText;
+    private Button connectButton;
+    private EditData valueEdit;
+    private Button sendZeroButton;
+    private Button sendValueButton;
+    private Button clearButton;
+    private LinearLayout dataLayout;
+
+    private float value ;
+
+    final private static short NO_CONTROL = 0 ;
+    final private static short RATE_CONTROL = 1 ;
+    final private static short SPEED_CONTROL = 2 ;
+    final private static short PRESSURE_CONTROL = 3 ;
+    final private static short SLIDER_CONTROL = 4 ;
+    
+    private short controlType = NO_CONTROL ;
+
 
 
     @Override
@@ -372,7 +410,7 @@ public class MainActivity extends BaseARActivity
 
 
 
-        bluetoothState = (TextView) findViewById(R.id.textOverlay);
+        bluetoothOverlay = (TextView) findViewById(R.id.textOverlay);
         /*this.tangibleBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -400,6 +438,15 @@ public class MainActivity extends BaseARActivity
         lock.disableKeyguard();  
 
 
+        //BLE
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        scanStarted = true;
+        bluetoothAdapter.startLeScan(new UUID[]{ RFduinoService.UUID_SERVICE },MainActivity.this);
+        //Intent rfduinoIntent = new Intent(MainActivity.this, RFduinoService.class);
+        //bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
+        //launchBluetooth();
+        //scanBluetooth();
+        setStateOverlay();
         
     }
 
@@ -616,6 +663,19 @@ public class MainActivity extends BaseARActivity
        // Log.d(TAG, "onAccuracyChanged");
    }
 
+   @Override
+    protected void onStart() {
+        super.onStart();
+
+        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
+        registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
+
+        updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
+        setStateOverlay();
+        //onStartBluetooth();
+    }
+
 
     @Override
     protected void onPause() {
@@ -630,6 +690,7 @@ public class MainActivity extends BaseARActivity
         mSensorManager.unregisterListener(this);
 
     }
+
 
     @Override
     protected void onResume() {
@@ -656,6 +717,7 @@ public class MainActivity extends BaseARActivity
         }
         mSensorManager.registerListener(this, mGyro, SensorManager.SENSOR_DELAY_UI);
         mSensorManager.registerListener(this, mRotation, SensorManager.SENSOR_DELAY_UI);
+        setStateOverlay();
 
     }
 
@@ -664,6 +726,11 @@ public class MainActivity extends BaseARActivity
         Log.d(TAG,"Finish Activity");
         //writeLogging();
         super.onStop() ;
+//        bluetoothAdapter.stopLeScan(this);
+//        unregisterReceiver(scanModeReceiver);
+//        unregisterReceiver(bluetoothStateReceiver);
+//        unregisterReceiver(rfduinoReceiver);
+        onStopBluetooth();
     }
 
    
@@ -836,6 +903,7 @@ public class MainActivity extends BaseARActivity
 
     private void setupSliderPrecision() {
         // "Jet" color map
+        /*
         int[] colors = new int[] {
             0xFF00007F, // dark blue
             0xFF0000FF, // blue
@@ -848,11 +916,11 @@ public class MainActivity extends BaseARActivity
             0xFF7F0000  // dark red
         };
         //Have to use int
-        final int step = 1;
-        final int max = 150;
+        final int step = 2;
+        final int max = 400;
         final int min = 10;
-        final int initialValue = 100 ;
-        final double initialPosition = 100 ;
+        final int initialValue = 400 ;
+        final double initialPosition = 400 ;
 
         GradientDrawable colormap = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, colors);
         colormap.setGradientType(GradientDrawable.LINEAR_GRADIENT);
@@ -916,7 +984,7 @@ public class MainActivity extends BaseARActivity
                 updateDataSettings();
                 //Log.d(TAG, "Precision Java = " + mProgress);
             }
-        });
+        });*/
     }
 
     @Override
@@ -1047,6 +1115,14 @@ public class MainActivity extends BaseARActivity
 
             case R.id.action_bluetooth:
                 item.setChecked(!item.isChecked());
+                if(item.isChecked()){
+                    connectBluetooth();
+                }
+                else{
+                    disconnectBluetooth();
+                }
+                
+                setStateOverlay();
                 break ;
 
             case R.id.action_quit:
@@ -1075,6 +1151,35 @@ public class MainActivity extends BaseARActivity
                 loadDataset(velocities);
                 reset();
                 break ;
+
+
+            case R.id.action_ratecontrol:
+                item.setChecked(!item.isChecked)
+                if(item.isChecked()){
+                    changeControlType(PRESSURE_CONTROL);
+                }
+                break;
+
+            case R.id.action_speedcontrol:
+                item.setChecked(!item.isChecked)
+                if(item.isChecked()){
+                    changeControlType(PRESSURE_CONTROL);
+                }
+                break;
+
+            case R.id.action_pressurecontrol:
+                item.setChecked(!item.isChecked)
+                if(item.isChecked()){
+                    changeControlType(PRESSURE_CONTROL);
+                }
+                break;
+
+            case R.id.action_slidercontrol:
+                item.setChecked(!item.isChecked)
+                if(item.isChecked()){
+                    changeControlType(PRESSURE_CONTROL);
+                }
+                break;
 
 
 
@@ -1112,6 +1217,11 @@ public class MainActivity extends BaseARActivity
         updateDataSettings();
         requestRender();
 
+    }
+
+    private void changeControlType(short s){
+        controlType = s ;
+        //TODO ADD changes for the native part as well and propagate
     }
 
 
@@ -1321,7 +1431,7 @@ public class MainActivity extends BaseARActivity
         }
 
 
-
+        setStateOverlay();
         return true;
     }
 
@@ -1347,6 +1457,204 @@ public class MainActivity extends BaseARActivity
     @Override
     public void onClick(View v) {
     
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //BLE
+
+    private final void launchBluetooth(){
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter.enable();
+    }
+
+    private final void scanBluetooth(){
+        scanStarted = true;
+        bluetoothAdapter.startLeScan(new UUID[]{ RFduinoService.UUID_SERVICE }, MainActivity.this);
+    }
+
+    private final void connectBluetooth(){
+        onStartBluetooth();
+        launchBluetooth();
+        scanBluetooth();
+        Intent rfduinoIntent = new Intent(MainActivity.this, RFduinoService.class);
+        bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
+    }
+
+    private final void disconnectBluetooth(){
+        onStopBluetooth();
+        bluetoothAdapter.stopLeScan(this);
+    }
+
+    private final void onStartBluetooth(){
+        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
+        registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
+
+        updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
+        this.areReceiverUnregistered = false ;
+    }
+
+    protected void onStopBluetooth() {
+        if(!this.areReceiverUnregistered){
+            bluetoothAdapter.stopLeScan(this);
+
+            unregisterReceiver(scanModeReceiver);
+            unregisterReceiver(bluetoothStateReceiver);
+            unregisterReceiver(rfduinoReceiver);
+            
+            this.areReceiverUnregistered = true ;    
+        }
+        
+    }
+
+    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
+            if (state == BluetoothAdapter.STATE_ON) {
+                upgradeState(STATE_DISCONNECTED);
+            } else if (state == BluetoothAdapter.STATE_OFF) {
+                downgradeState(STATE_BLUETOOTH_OFF);
+            }
+        }
+    };
+
+    private final BroadcastReceiver scanModeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            scanning = (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_NONE);
+            scanStarted &= scanning;
+        }
+    };
+
+    private final ServiceConnection rfduinoServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            rfduinoService = ((RFduinoService.LocalBinder) service).getService();
+            if (rfduinoService.initialize()) {
+                if (rfduinoService.connect(bluetoothDevice.getAddress())) {
+                    upgradeState(STATE_CONNECTING);
+                }
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            rfduinoService = null;
+            downgradeState(STATE_DISCONNECTED);
+        }
+    };
+
+    private final BroadcastReceiver rfduinoReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (RFduinoService.ACTION_CONNECTED.equals(action)) {
+                upgradeState(STATE_CONNECTED);
+            } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
+                downgradeState(STATE_DISCONNECTED);
+            } else if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
+                getData(intent.getByteArrayExtra(RFduinoService.EXTRA_DATA));
+            }
+        }
+    };
+
+
+     private void upgradeState(int newState) {
+        if (newState > state) {
+            updateState(newState);
+        }
+    }
+
+    private void downgradeState(int newState) {
+        if (newState < state) {
+            updateState(newState);
+        }
+    }
+
+    private void updateState(int newState) {
+        state = newState;
+    }
+
+
+    private void getData(byte[] data) {
+        //View view = getLayoutInflater().inflate(android.R.layout.simple_list_item_2, dataLayout, false);
+
+        //TextView text1 = (TextView) view.findViewById(android.R.id.text1);
+        //text1.setText(HexAsciiHelper.bytesToHex(data));
+
+        value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
+
+
+        //Have to use int
+        final int step = 2;
+        final int max = 400;
+        final int min = 10;
+        final int initialValue = 400 ;
+        final double initialPosition = 400 ;
+        final int valueInt = (int) (value * 100) ;
+
+        final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
+        //sliderPrecision.setBackgroundDrawable(colormap);
+        //sliderPrecision.setProgressDrawable(new ColorDrawable(0x00000000)); // transparent
+
+        sliderPrecision.setMax( (max - min) / step );
+        sliderPrecision.setProgress((int)(max-valueInt));
+        Log.d("ValueSlider","Value = "+value+"  Value Int = "+valueInt+"  Max - Value Int = "+(max-valueInt)+" Value  Slider = "+(max-valueInt));
+
+        final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
+        sliderTooltipPrecision.setVisibility(View.INVISIBLE);
+
+        fluidSettings.precision = 4 - value ;
+        updateDataSettings();
+
+        //Log.d("Bytes",""+new String(data, StandardCharsets.UTF_8));
+
+        /*String ascii = HexAsciiHelper.bytesToAsciiMaybe(data);
+        if (ascii != null) {
+            TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+            text2.setText(ascii);
+        }
+        else{
+            Log.d("StringMessage","Rate");
+        }
+
+        dataLayout.addView(
+                view, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);*/
+    }
+
+    @Override
+    public void onLeScan(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
+        bluetoothAdapter.stopLeScan(this);
+        bluetoothDevice = device;
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                bluetoothOverlay.setText(BluetoothHelper.getDeviceInfoText(bluetoothDevice, rssi, scanRecord));
+            }
+        });
+    }
+
+    private void setStateOverlay(){
+        String connectionText = "Disconnected";
+        if (state == STATE_CONNECTING) {
+            connectionText = "Connecting...";
+        } else if (state == STATE_CONNECTED) {
+            connectionText = "Connected";
+        }
+        bluetoothOverlay.setText(connectionText);
     }
 
 

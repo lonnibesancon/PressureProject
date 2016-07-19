@@ -21,7 +21,7 @@
  *
  */
 
-package com.example.lonnibesancon.myapplication;
+package fr.limsi.ARViewer;
 
 import android.Manifest;
 import android.app.Service;
@@ -283,6 +283,7 @@ public class RFduinoService extends Service {
 
         characteristic.setValue(data);
         characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+
         return mBluetoothGatt.writeCharacteristic(characteristic);
     }
 

@@ -14,7 +14,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="com.lannbox.rfduinotest.RFduinoService" />
+        <!--<service android:name="com.lannbox.rfduinotest.RFduinoService" />-->
+        <service android:name=".RFduinoService" />
     </application>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />

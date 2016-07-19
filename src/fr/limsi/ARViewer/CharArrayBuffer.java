@@ -28,7 +28,7 @@
  * <http://www.apache.org/>.
  *
  */
-package com.example.lonnibesancon.myapplication;
+package fr.limsi.ARViewer;
 /**
  * A resizable char array.
  *

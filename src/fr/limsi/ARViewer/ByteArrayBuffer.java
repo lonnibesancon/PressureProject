@@ -31,7 +31,7 @@
  *
  */
 
-package com.example.lonnibesancon.myapplication;
+package fr.limsi.ARViewer;
 
 /**
  * A resizable byte array.
