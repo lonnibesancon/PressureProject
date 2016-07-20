@@ -22,6 +22,7 @@ public class FluidMechanics {
         boolean autoConstraint ;
         boolean translatePlane ;
         int dataORplane ;
+        int controlType ;
     }
 
     static class State {

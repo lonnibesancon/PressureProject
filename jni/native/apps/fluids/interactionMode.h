@@ -32,6 +32,13 @@
 #define velocity	4
 
 
+#define RATE_CONTROL		1
+#define SPEED_CONTROL		2
+#define PRESSURE_CONTROL	3
+#define SLIDER_CONTROL		4
+#define NO_CONTROL			0
+
+
 #define thresholdRST  300.0 
 
 #endif

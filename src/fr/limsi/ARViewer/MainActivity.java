@@ -238,9 +238,6 @@ public class MainActivity extends BaseARActivity
     final private static short SPEED_CONTROL = 2 ;
     final private static short PRESSURE_CONTROL = 3 ;
     final private static short SLIDER_CONTROL = 4 ;
-    
-    private short controlType = NO_CONTROL ;
-
 
 
     @Override
@@ -325,6 +322,7 @@ public class MainActivity extends BaseARActivity
         FluidMechanics.getState(fluidState);
         fluidSettings.precision = 1 ;
         fluidSettings.translatePlane = false ;
+        fluidSettings.controlType = SPEED_CONTROL ;
         //fluidSettings.dataORplane = 0 ; //Data 
 
         //this.client = new Client();
@@ -903,88 +901,90 @@ public class MainActivity extends BaseARActivity
 
     private void setupSliderPrecision() {
         // "Jet" color map
-        /*
-        int[] colors = new int[] {
-            0xFF00007F, // dark blue
-            0xFF0000FF, // blue
-            0xFF007FFF, // azure
-            0xFF00FFFF, // cyan
-            0xFF7FFF7F, // light green
-            0xFFFFFF00, // yellow
-            0xFFFF7F00, // orange
-            0xFFFF0000, // red
-            0xFF7F0000  // dark red
-        };
-        //Have to use int
-        final int step = 2;
-        final int max = 400;
-        final int min = 10;
-        final int initialValue = 400 ;
-        final double initialPosition = 400 ;
+        if(fluidSettings.controlType == SLIDER_CONTROL){
+            int[] colors = new int[] {
+                0xFF00007F, // dark blue
+                0xFF0000FF, // blue
+                0xFF007FFF, // azure
+                0xFF00FFFF, // cyan
+                0xFF7FFF7F, // light green
+                0xFFFFFF00, // yellow
+                0xFFFF7F00, // orange
+                0xFFFF0000, // red
+                0xFF7F0000  // dark red
+            };
+            //Have to use int
+            final int step = 2;
+            final int max = 400;
+            final int min = 10;
+            final int initialValue = 400 ;
+            final double initialPosition = 400 ;
 
-        GradientDrawable colormap = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, colors);
-        colormap.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-        final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
-        //sliderPrecision.setBackgroundDrawable(colormap);
-        //sliderPrecision.setProgressDrawable(new ColorDrawable(0x00000000)); // transparent
+            GradientDrawable colormap = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, colors);
+            colormap.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+            final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
+            //sliderPrecision.setBackgroundDrawable(colormap);
+            //sliderPrecision.setProgressDrawable(new ColorDrawable(0x00000000)); // transparent
 
-        sliderPrecision.setMax( (max - min) / step );
-        sliderPrecision.setProgress((int)(initialPosition));
+            sliderPrecision.setMax( (max - min) / step );
+            sliderPrecision.setProgress((int)(initialPosition));
 
-        final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
-        sliderTooltipPrecision.setVisibility(View.INVISIBLE);
+            final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
+            sliderTooltipPrecision.setVisibility(View.INVISIBLE);
 
-        sliderPrecision.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-            double mProgress = -1;
-            boolean mPressed = false;
+            sliderPrecision.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+                double mProgress = -1;
+                boolean mPressed = false;
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                sliderTooltipPrecision.setVisibility(View.VISIBLE);
-                mPressed = true;
-                //Log.d(TAG, "Precision Java = " + mProgress);
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                sliderTooltipPrecision.setVisibility(View.INVISIBLE);
-                if (mProgress != -1) {
-                    // Log.d(TAG, "setSurfaceValue " + mProgress);
-                    //fluidSettings.precision = (float)mProgress;
-                    //updateDataSettings();
-                    mProgress = -1;
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    sliderTooltipPrecision.setVisibility(View.VISIBLE);
+                    mPressed = true;
+                    //Log.d(TAG, "Precision Java = " + mProgress);
                 }
-                mPressed = false;
-            }
 
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // Only handle events called from VerticalSeekBar. Other events, generated
-                // from the base class SeekBar, contain bogus values because the Android
-                // SeekBar was not meant to be vertical.
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    sliderTooltipPrecision.setVisibility(View.INVISIBLE);
+                    if (mProgress != -1) {
+                        // Log.d(TAG, "setSurfaceValue " + mProgress);
+                        //fluidSettings.precision = (float)mProgress;
+                        //updateDataSettings();
+                        mProgress = -1;
+                    }
+                    mPressed = false;
+                }
+
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    // Only handle events called from VerticalSeekBar. Other events, generated
+                    // from the base class SeekBar, contain bogus values because the Android
+                    // SeekBar was not meant to be vertical.
 
 
-                
-                mProgress = (double)progress/seekBar.getMax();
-                // Log.d(TAG, "mProgress = " + mProgress);
-                int pos = seekBar.getTop() + (int)(seekBar.getHeight() * (1.0 - mProgress));
-                sliderTooltipPrecision.setPadding((int)dpToPixels(5), 0, (int)dpToPixels(5), 0);
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sliderTooltipPrecision.getLayoutParams());
-                lp.topMargin = pos - sliderTooltipPrecision.getHeight()/2;
-                lp.rightMargin = (int)dpToPixels(25);
-                sliderTooltipPrecision.setLayoutParams(lp);
+                    
+                    mProgress = (double)progress/seekBar.getMax();
+                    // Log.d(TAG, "mProgress = " + mProgress);
+                    int pos = seekBar.getTop() + (int)(seekBar.getHeight() * (1.0 - mProgress));
+                    sliderTooltipPrecision.setPadding((int)dpToPixels(5), 0, (int)dpToPixels(5), 0);
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sliderTooltipPrecision.getLayoutParams());
+                    lp.topMargin = pos - sliderTooltipPrecision.getHeight()/2;
+                    lp.rightMargin = (int)dpToPixels(25);
+                    sliderTooltipPrecision.setLayoutParams(lp);
 
-                //fluidSettings.surfacePreview = true;
-                double value = min/(100.0) + (progress * (step/100.0));
-                fluidSettings.precision = (float)value ;
+                    //fluidSettings.surfacePreview = true;
+                    double value = min/(100.0) + (progress * (step/100.0));
+                    fluidSettings.precision = (float)value ;
 
-                DecimalFormat df = new DecimalFormat("0.00##");
-                String tooltipvalue = df.format(value);
-                sliderTooltipPrecision.setText(tooltipvalue + "");
-                updateDataSettings();
-                //Log.d(TAG, "Precision Java = " + mProgress);
-            }
-        });*/
+                    DecimalFormat df = new DecimalFormat("0.00##");
+                    String tooltipvalue = df.format(value);
+                    sliderTooltipPrecision.setText(tooltipvalue + "");
+                    updateDataSettings();
+                    //Log.d(TAG, "Precision Java = " + mProgress);
+                }
+            });
+        }
+        
     }
 
     @Override
@@ -1154,30 +1154,30 @@ public class MainActivity extends BaseARActivity
 
 
             case R.id.action_ratecontrol:
-                item.setChecked(!item.isChecked)
+                item.setChecked(!item.isChecked());
                 if(item.isChecked()){
-                    changeControlType(PRESSURE_CONTROL);
+                    changeControlType(RATE_CONTROL);
                 }
                 break;
 
             case R.id.action_speedcontrol:
-                item.setChecked(!item.isChecked)
+                item.setChecked(!item.isChecked());
                 if(item.isChecked()){
-                    changeControlType(PRESSURE_CONTROL);
+                    changeControlType(SPEED_CONTROL);
                 }
                 break;
 
             case R.id.action_pressurecontrol:
-                item.setChecked(!item.isChecked)
+                item.setChecked(!item.isChecked());
                 if(item.isChecked()){
                     changeControlType(PRESSURE_CONTROL);
                 }
                 break;
 
             case R.id.action_slidercontrol:
-                item.setChecked(!item.isChecked)
+                item.setChecked(!item.isChecked());
                 if(item.isChecked()){
-                    changeControlType(PRESSURE_CONTROL);
+                    changeControlType(SLIDER_CONTROL);
                 }
                 break;
 
@@ -1219,8 +1219,9 @@ public class MainActivity extends BaseARActivity
 
     }
 
-    private void changeControlType(short s){
-        controlType = s ;
+    private void changeControlType(int s){
+        fluidSettings.controlType = s ;
+        updateDataSettings();
         //TODO ADD changes for the native part as well and propagate
     }
 
@@ -1590,49 +1591,33 @@ public class MainActivity extends BaseARActivity
 
 
     private void getData(byte[] data) {
-        //View view = getLayoutInflater().inflate(android.R.layout.simple_list_item_2, dataLayout, false);
 
-        //TextView text1 = (TextView) view.findViewById(android.R.id.text1);
-        //text1.setText(HexAsciiHelper.bytesToHex(data));
-
-        value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
+        if(fluidSettings.controlType == PRESSURE_CONTROL){
+            value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
 
 
-        //Have to use int
-        final int step = 2;
-        final int max = 400;
-        final int min = 10;
-        final int initialValue = 400 ;
-        final double initialPosition = 400 ;
-        final int valueInt = (int) (value * 100) ;
+            //Have to use int
+            final int step = 2;
+            final int max = 400;
+            final int min = 10;
+            final int initialValue = 400 ;
+            final double initialPosition = 400 ;
+            final int valueInt = (int) (value * 100) ;
 
-        final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
-        //sliderPrecision.setBackgroundDrawable(colormap);
-        //sliderPrecision.setProgressDrawable(new ColorDrawable(0x00000000)); // transparent
+            final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
 
-        sliderPrecision.setMax( (max - min) / step );
-        sliderPrecision.setProgress((int)(max-valueInt));
-        Log.d("ValueSlider","Value = "+value+"  Value Int = "+valueInt+"  Max - Value Int = "+(max-valueInt)+" Value  Slider = "+(max-valueInt));
+            sliderPrecision.setMax( (max - min) / step );
+            sliderPrecision.setProgress((int)(max-valueInt));
+            Log.d("ValueSlider","Value = "+value+"  Value Int = "+valueInt+"  Max - Value Int = "+(max-valueInt)+" Value  Slider = "+(max-valueInt));
 
-        final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
-        sliderTooltipPrecision.setVisibility(View.INVISIBLE);
+            final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
+            sliderTooltipPrecision.setVisibility(View.INVISIBLE);
 
-        fluidSettings.precision = 4 - value ;
-        updateDataSettings();
+            fluidSettings.precision = 4 - value ;
+            updateDataSettings();
 
-        //Log.d("Bytes",""+new String(data, StandardCharsets.UTF_8));
-
-        /*String ascii = HexAsciiHelper.bytesToAsciiMaybe(data);
-        if (ascii != null) {
-            TextView text2 = (TextView) view.findViewById(android.R.id.text2);
-            text2.setText(ascii);
         }
-        else{
-            Log.d("StringMessage","Rate");
-        }
-
-        dataLayout.addView(
-                view, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);*/
+        
     }
 
     @Override

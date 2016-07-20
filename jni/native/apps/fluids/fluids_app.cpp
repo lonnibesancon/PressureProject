@@ -140,6 +140,13 @@ struct FluidMechanics::Impl
 	Vector3 currentSlicePos ;
 	Quaternion currentDataRot ;
 	Vector3 currentDataPos ;
+
+	//Quaternion and vector to represent previous positions and orientation so as to compute angular speed and speed
+	Quaternion previousRot ;
+	Vector3 previousPos ;
+	float precisionRot = 1 ;
+	float precisionPos = 1 ;
+
 	//Quaternion representing the orientation of the tablet no matter the interaction mode or constrains
 	Quaternion currentTabRot ;
 
@@ -234,6 +241,11 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	cylinder = LoaderOBJ::load(baseDir + "/cylinder.obj");
 	lines.reset(new Lines);
 
+
+	previousPos = currentDataPos ;
+	previousRot = currentDataRot ;
+	
+
 	isAboveThreshold = false ;
 
 	
@@ -247,6 +259,8 @@ void FluidMechanics::Impl::reset(){
 	currentSlicePos = Vector3(0, 0, 400);
 	currentDataPos = Vector3(0,0,400);
 	buttonIsPressed = false ;
+	previousPos = currentDataPos ;
+	previousRot = currentDataRot ;
 
 
 	setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400)),Matrix4::makeTransform(Vector3(0, 0, 400)));
@@ -991,7 +1005,7 @@ void FluidMechanics::Impl::updateMatrices(){
 	Matrix4 statem ;
 	Matrix4 slicem ;
 
-
+	LOGD("CONTROL TYPE = %d", settings->controlType);
 
 	if( interactionMode == dataTouch ||
 		interactionMode == dataTouchTangible
@@ -1002,14 +1016,14 @@ void FluidMechanics::Impl::updateMatrices(){
 			computeFingerInteraction();
 	}
 	
-	statem = Matrix4::makeTransform(currentDataPos, currentDataRot);
-
-
-	//First we update the slice
-	//Plane moving freely
-	synchronized(state->stylusModelMatrix) {
-		
+	if(settings->controlType == SPEED_CONTROL){
+		//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
+		Quaternion r = currentDataRot * previousRot.inverse();
+		float teta = 2 * safe_acos(r.w);
+		LOGD("R.W = %f    ----   ANGULAR SPEED = %f",r.w, teta);
 	}
+
+	statem = Matrix4::makeTransform(currentDataPos, currentDataRot);
 
 	//Plane not moving on the tablet
 	/*synchronized(state->modelMatrix) {
@@ -1024,7 +1038,10 @@ void FluidMechanics::Impl::updateMatrices(){
 	}
 	
 	
-
+	//We update the previous positions and orientation
+	//Will only be used if the control mode is Speed
+	previousPos = currentDataPos ;
+	previousRot = currentDataRot ;
 
 }
 

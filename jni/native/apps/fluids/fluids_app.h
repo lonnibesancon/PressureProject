@@ -79,7 +79,8 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 	   autoConstraint(false),
 	   translatePlane(false),
 	   isSeeding(false),
-	   dataORplane(0)
+	   dataORplane(0),
+	   controlType(0)
 	{}
 
 	static constexpr float defaultClipDist = 360.0f;
@@ -99,6 +100,7 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 	bool translatePlane = false ;
 	bool isSeeding = false ;
 	int dataORplane = 0 ; //Data
+	int controlType = 0 ;
 
 	void read(JNIEnv* env, jobject obj, jclass cls) const
 	{
@@ -126,7 +128,9 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 
 		SET_JNI_FIELD(obj, surfacePercentage, Double, "D", surfacePercentage);
 
-		SET_JNI_FIELD(obj, precision, Float, "F", precision);		
+		SET_JNI_FIELD(obj, precision, Float, "F", precision);
+
+		SET_JNI_FIELD(obj, controlType, Int, "I", controlType);		
 	}
 
 	void write(JNIEnv* env, jobject obj, jclass cls)
@@ -152,6 +156,8 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 		GET_JNI_FIELD(obj, considerTranslation, Int, "I", considerTranslation);	
 		GET_JNI_FIELD(obj, translatePlane, Boolean, "Z", translatePlane);
 		GET_JNI_FIELD(obj, dataORplane, Int, "I", dataORplane);	
+
+		GET_JNI_FIELD(obj, controlType, Int, "I", controlType);
 
 		int st;
 		GET_JNI_FIELD(obj, sliceType, Int, "I", st);

@@ -38,11 +38,11 @@
             android:id="@+id/action_ratecontrol" />
       <item android:title="Speed Control"
             android:checkable="true"
-            android:checked="false"
+            android:checked="true"
             android:id="@+id/action_speedcontrol" />
       <item android:title="Pressure Control"
             android:checkable="true"
-            android:checked="true"
+            android:checked="false"
             android:id="@+id/action_pressurecontrol" />
       <item android:title="Slider Control"
             android:checkable="true"

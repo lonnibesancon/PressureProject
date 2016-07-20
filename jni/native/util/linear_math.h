@@ -1319,6 +1319,20 @@ inline Matrix4<T> Matrix4<T>::makeTransform(
 
 } // namespace LinearMath
 
+
+//To avoid NAN exception with approximation errors
+template <typename T>
+T safe_acos(T number){
+	
+	if(number > 1.0){
+		number = 1.0 ;
+	}
+	if(number < 0.0){
+		number = 0.0 ;
+	}
+
+	return (acos(number));
+}
 typedef LinearMath::Vector2<float> Vector2_f;
 typedef LinearMath::Vector3<float> Vector3_f;
 typedef LinearMath::Matrix3<float> Matrix3_f;
