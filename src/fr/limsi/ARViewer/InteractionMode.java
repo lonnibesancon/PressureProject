@@ -45,7 +45,7 @@ public interface InteractionMode{
 	public static final float MAXPRECISION	= 3 ;
 	public static final float MINPRECISION 	= 0.5f;
 
-	public static final float MAXPRESSURE 	= 4 ;
+	public static final float MAXPRESSURE 	= 3 ;
 	public static final float MINPRESSURE	= 0.5f ;
 
 	//LOGGING HELP
