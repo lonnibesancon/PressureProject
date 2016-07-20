@@ -233,11 +233,12 @@ public class MainActivity extends BaseARActivity
 
     private float value ;
 
-    final private static short NO_CONTROL = 0 ;
-    final private static short RATE_CONTROL = 1 ;
-    final private static short SPEED_CONTROL = 2 ;
-    final private static short PRESSURE_CONTROL = 3 ;
-    final private static short SLIDER_CONTROL = 4 ;
+    final private static short NO_CONTROL           = 0 ;
+    final private static short RATE_CONTROL         = 1 ;
+    final private static short RATE_CONTROL_SIMPLE  = 11 ;
+    final private static short SPEED_CONTROL        = 2 ;
+    final private static short PRESSURE_CONTROL     = 3 ;
+    final private static short SLIDER_CONTROL       = 4 ;
 
 
     @Override

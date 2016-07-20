@@ -1320,9 +1320,19 @@ inline Matrix4<T> Matrix4<T>::makeTransform(
 } // namespace LinearMath
 
 
+
+template <typename T>
+inline T euclideandist(LinearMath::Vector3<T> A, LinearMath::Vector3<T> B){
+	if(std::is_same<T, float>::value){
+		return (sqrtf( (A.x - B.x)*(A.x - B.x) + (A.y - B.y)*(A.y - B.y) + (A.z - B.z)*(A.z - B.z) ));
+	}
+	return (sqrt( (A.x - B.x)*(A.x - B.x) + (A.y - B.y)*(A.y - B.y) + (A.z - B.z)*(A.z - B.z) ));
+	
+}
+
 //To avoid NAN exception with approximation errors
 template <typename T>
-T safe_acos(T number){
+inline T safe_acos(T number){
 	
 	if(number > 1.0){
 		number = 1.0 ;
@@ -1333,6 +1343,9 @@ T safe_acos(T number){
 
 	return (acos(number));
 }
+
+
+
 typedef LinearMath::Vector2<float> Vector2_f;
 typedef LinearMath::Vector3<float> Vector3_f;
 typedef LinearMath::Matrix3<float> Matrix3_f;
@@ -1344,6 +1357,7 @@ typedef LinearMath::Vector3<double> Vector3_d;
 typedef LinearMath::Matrix3<double> Matrix3_d;
 typedef LinearMath::Matrix4<double> Matrix4_d;
 typedef LinearMath::Quaternion<double> Quaternion_d;
+
 
 #ifdef DOUBLE_PRECISION
 
@@ -1364,3 +1378,6 @@ typedef Quaternion_f Quaternion;
 #endif /* DOUBLE_PRECISION */
 
 #endif /* LINEAR_MATH_H */
+
+
+

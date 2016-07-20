@@ -132,6 +132,9 @@ struct FluidMechanics::Impl
 	void reset();
 	int getFingerPos(int fingerID);
 	void onTranslateBar(float pos);
+	float convertIntoNewRange(float oldRangeMin, float oldRangeMax, float value);
+	void computeAngular();
+	void computeEucli();
 
 	Vector3 posToDataCoords(const Vector3& pos); // "pos" is in eye coordinates
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
@@ -144,8 +147,17 @@ struct FluidMechanics::Impl
 	//Quaternion and vector to represent previous positions and orientation so as to compute angular speed and speed
 	Quaternion previousRot ;
 	Vector3 previousPos ;
-	float precisionRot = 1 ;
-	float precisionPos = 1 ;
+	
+
+	//Quaternion and vector to represent the position and orientation for the rate control mode
+	Quaternion centerRot ;
+	Vector3 centerPos ;
+
+	float teta = 1 ;
+	float eucli = 1 ;
+	Vector3 directionMov = Vector3::zero();
+	Quaternion directionRot ;
+
 
 	//Quaternion representing the orientation of the tablet no matter the interaction mode or constrains
 	Quaternion currentTabRot ;
@@ -247,6 +259,8 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	
 
 	isAboveThreshold = false ;
+	directionMov = Vector3(1,1,1);
+	directionRot = currentDataRot ;
 
 	
 	targetId = 0 ;
@@ -261,10 +275,21 @@ void FluidMechanics::Impl::reset(){
 	buttonIsPressed = false ;
 	previousPos = currentDataPos ;
 	previousRot = currentDataRot ;
+	centerPos = currentDataPos ;
+	centerRot = currentDataRot ;
+	directionMov = Vector3::zero();
 
 
 	setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400)),Matrix4::makeTransform(Vector3(0, 0, 400)));
 	
+}
+
+float FluidMechanics::Impl::convertIntoNewRange(float oldRangeMin, float oldRangeMax, float value){
+	//http://stackoverflow.com/questions/929103/convert-a-number-range-to-another-range-maintaining-ratio
+	float oldRange = oldRangeMax - oldRangeMin ;
+	float newRange = MAXPRECISION - MINPRECISION ;
+	value = (((value - oldRangeMin) * newRange)/oldRange)+MINPRECISION ;
+	return value ;
 }
 
 
@@ -473,12 +498,21 @@ void FluidMechanics::Impl::buttonPressed()
 {
 	tangoEnabled = true ;
 
-	//buttonIsPressed = true;
+	centerPos = currentDataPos ;
+	centerRot = currentDataRot ;
+
+	//For the rate control we have to memorize the initial position to be able to compute
+	//The precision factor
+
+
 }
 
 float FluidMechanics::Impl::buttonReleased()
 {
 	tangoEnabled = false ;
+
+	centerPos = currentDataPos ;
+	centerRot = currentDataRot ;
 
 	return 0 ;
 }
@@ -799,6 +833,17 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 			trans.y *= settings->considerY ;//* settings->considerTranslation ;
 			trans.z *= settings->considerZ ; //* settings->considerTranslation ;
 
+			if(settings->controlType == SPEED_CONTROL){
+				computeEucli();
+			}
+			if(settings->controlType == RATE_CONTROL){
+				trans *=eucli ;
+			}
+			if(settings->controlType == RATE_CONTROL_SIMPLE){
+				Vector3 toAdd = directionMov * eucli ;
+				//currentDataPos += toAdd ;
+				printAny(toAdd,"DIRECTIONMOV" );
+			}
 			currentDataPos +=trans ;
 		}
 		
@@ -817,9 +862,9 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 		return ;
 	}
 
-	rz *=settings->precision ;
-	ry *=settings->precision ;
-	rx *=settings->precision ;
+	rz *=settings->precision * (teta) ;
+	ry *=settings->precision * (teta) ;
+	rx *=settings->precision * (teta) ;
 	if(tangoEnabled){
 		if(interactionMode == dataTangible || interactionMode == dataTouchTangible)
 		{
@@ -829,6 +874,17 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 			currentDataRot = rot;
+			printAny(currentDataRot, "Rot");
+
+			if(settings->controlType == RATE_CONTROL_SIMPLE){
+				currentDataRot = currentDataRot + directionRot ;
+			}
+
+			if(settings->controlType == SPEED_CONTROL){
+				computeAngular();
+
+			}
+
 		}
 
 		//Now for the automatic constraining of interaction
@@ -936,6 +992,7 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 		diff /=2 ;
 		diff /=4 ;
 		diff *= settings->precision ;
+		diff *= eucli ;
 		diff *= settings->considerTranslation * settings->considerX * settings->considerY;
 
 		Vector3 trans = Vector3(diff.x, diff.y, 0);
@@ -1000,6 +1057,29 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 	}
 	
 }
+void FluidMechanics::Impl::computeAngular(){
+	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
+	directionRot = currentDataRot * previousRot.inverse();
+	float tmp = 2 * safe_acos(directionRot.w);
+	
+
+	if(tmp < MINANGULAR)		tmp = MINANGULAR ;
+	if(tmp > MAXANGULAR)		tmp = MAXANGULAR ;
+
+	teta =convertIntoNewRange(MINANGULAR, MAXANGULAR, tmp);
+	LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
+	 
+}
+
+void FluidMechanics::Impl::computeEucli(){
+	float tmp = euclideandist(currentDataPos, previousPos);
+	if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
+	if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
+	//if(eucli < MINEUCLIDEAN)	eucli = MINEUCLIDEAN ;	
+	//if(eucli > MAXEUCLIDEAN)	eucli = MAXEUCLIDEAN ;
+	eucli = convertIntoNewRange(MINEUCLIDEAN, MAXEUCLIDEAN, tmp);
+	LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);
+}
 
 void FluidMechanics::Impl::updateMatrices(){
 	Matrix4 statem ;
@@ -1016,12 +1096,6 @@ void FluidMechanics::Impl::updateMatrices(){
 			computeFingerInteraction();
 	}
 	
-	if(settings->controlType == SPEED_CONTROL){
-		//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
-		Quaternion r = currentDataRot * previousRot.inverse();
-		float teta = 2 * safe_acos(r.w);
-		LOGD("R.W = %f    ----   ANGULAR SPEED = %f",r.w, teta);
-	}
 
 	statem = Matrix4::makeTransform(currentDataPos, currentDataRot);
 
