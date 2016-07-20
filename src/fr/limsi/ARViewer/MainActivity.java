@@ -323,7 +323,7 @@ public class MainActivity extends BaseARActivity
         FluidMechanics.getState(fluidState);
         fluidSettings.precision = 1 ;
         fluidSettings.translatePlane = false ;
-        fluidSettings.controlType = SPEED_CONTROL ;
+        fluidSettings.controlType = PRESSURE_CONTROL ;
         //fluidSettings.dataORplane = 0 ; //Data 
 
         //this.client = new Client();
@@ -1595,15 +1595,18 @@ public class MainActivity extends BaseARActivity
 
         if(fluidSettings.controlType == PRESSURE_CONTROL){
             value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
+            if(value < MINPRESSURE)     value = MINPRESSURE ;
+            if(value > MAXPRESSURE)     value = MAXPRESSURE ;
 
+            value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
 
             //Have to use int
             final int step = 2;
-            final int max = 400;
-            final int min = 10;
-            final int initialValue = 400 ;
-            final double initialPosition = 400 ;
-            final int valueInt = (int) (value * 100) ;
+            final int max = (int)MAXPRECISION * 10;
+            final int min = (int)MINPRECISION * 10 ;
+            final int initialValue = max ;
+            final double initialPosition = (double)max ;
+            final int valueInt = (int) (value * 10) ;
 
             final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
 
@@ -1614,7 +1617,7 @@ public class MainActivity extends BaseARActivity
             final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
             sliderTooltipPrecision.setVisibility(View.INVISIBLE);
 
-            fluidSettings.precision = 4 - value ;
+            fluidSettings.precision = value ;
             updateDataSettings();
 
         }

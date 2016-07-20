@@ -41,6 +41,13 @@ public interface InteractionMode{
 	public static final int ironprot					= 2 ;
 	public static final int velocities					= 3 ;
 
+
+	public static final float MAXPRECISION	= 3 ;
+	public static final float MINPRECISION 	= 0.5f;
+
+	public static final float MAXPRESSURE 	= 4 ;
+	public static final float MINPRESSURE	= 0.5f ;
+
 	//LOGGING HELP
 
 
