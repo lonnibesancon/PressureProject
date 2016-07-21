@@ -43,9 +43,14 @@
 #define MINPRECISION		0.5
 
 #define MINEUCLIDEAN		0.005
-#define MAXEUCLIDEAN		15.0
+#define MAXEUCLIDEAN		10.0
+#define MINEUCLIDEANRATE	0.05
+#define MAXEUCLIDEANRATE	30
+
 #define MINANGULAR			0.00005
 #define MAXANGULAR			0.15
+#define MINANGULARRATE		0.5
+#define MAXANGULARRATE		5.0
 
 
 #define thresholdRST  300.0 

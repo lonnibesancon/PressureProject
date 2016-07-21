@@ -42,7 +42,7 @@ public interface InteractionMode{
 	public static final int velocities					= 3 ;
 
 
-	public static final float MAXPRECISION	= 3 ;
+	public static final float MAXPRECISION	= 3.0f ;	// FIXME, BUG IF 3
 	public static final float MINPRECISION 	= 0.5f;
 
 	public static final float MAXPRESSURE 	= 3 ;

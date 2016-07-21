@@ -150,12 +150,16 @@ struct FluidMechanics::Impl
 	
 
 	//Quaternion and vector to represent the position and orientation for the rate control mode
+	//Also quaternion and vector to represent the currentTab which is not synchronized anymore with the data
 	Quaternion centerRot ;
 	Vector3 centerPos ;
+	Quaternion tabRot;
+	Vector3 tabPos ;
+	Vector3 directionMov = Vector3::zero();
 
 	float teta = 1 ;
 	float eucli = 1 ;
-	Vector3 directionMov = Vector3::zero();
+	
 	Quaternion directionRot ;
 
 
@@ -500,6 +504,8 @@ void FluidMechanics::Impl::buttonPressed()
 
 	centerPos = currentDataPos ;
 	centerRot = currentDataRot ;
+	tabRot = currentDataRot ;
+	tabPos = currentDataPos ;
 
 	//For the rate control we have to memorize the initial position to be able to compute
 	//The precision factor
@@ -835,16 +841,23 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 
 			if(settings->controlType == SPEED_CONTROL){
 				computeEucli();
-			}
-			if(settings->controlType == RATE_CONTROL){
-				trans *=eucli ;
+				trans*=eucli ;
+				currentDataPos +=trans ;
 			}
 			if(settings->controlType == RATE_CONTROL_SIMPLE){
+				tabPos+=trans ;
+				computeEucli();
+				currentDataPos += directionMov ;
+			}
+			/*if(settings->controlType == RATE_CONTROL_SIMPLE){
 				Vector3 toAdd = directionMov * eucli ;
 				//currentDataPos += toAdd ;
 				printAny(toAdd,"DIRECTIONMOV" );
+				currentDataPos +=trans ;
+			}*/
+			else{
+				currentDataPos +=trans ;
 			}
-			currentDataPos +=trans ;
 		}
 		
 		//updateMatrices();
@@ -873,17 +886,22 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
 			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
-			currentDataRot = rot;
+
+
+			if(settings->controlType == RATE_CONTROL_SIMPLE || settings->controlType == RATE_CONTROL){
+				tabRot = rot ;
+				//currentDataRot = currentDataRot * directionRot ;
+			}
+
+			else{
+				currentDataRot = rot;	
+			}
+			
 			printAny(currentDataRot, "Rot");
 
-			if(settings->controlType == RATE_CONTROL_SIMPLE){
-				currentDataRot = currentDataRot + directionRot ;
-			}
+			
 
-			if(settings->controlType == SPEED_CONTROL){
-				computeAngular();
-
-			}
+			computeAngular();
 
 		}
 
@@ -892,6 +910,81 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 	}
 	
 }
+
+
+
+void FluidMechanics::Impl::computeAngular(){
+	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
+
+	if(settings->controlType == SPEED_CONTROL){
+		directionRot = currentDataRot * previousRot.inverse();
+		float tmp = 2 * safe_acos(directionRot.w);
+		
+
+		if(tmp < MINANGULAR)		tmp = MINANGULAR ;
+		if(tmp > MAXANGULAR)		tmp = MAXANGULAR ;
+
+		teta =convertIntoNewRange(MINANGULAR, MAXANGULAR, tmp);
+		LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
+
+		//We update the previous positions and orientation
+		//Will only be used if the control mode is Speed
+		previousRot = currentDataRot ;
+	}
+	else if(settings->controlType == RATE_CONTROL_SIMPLE){
+		directionRot = tabRot * centerRot.inverse();
+		float tmp = 2 * safe_acos(directionRot.w);
+
+		//if(tmp < MINANGULARRATE)		tmp = MINANGULARRATE ;
+		//if(tmp > MAXANGULARRATE)		tmp = MAXANGULARRATE ;
+
+		teta =convertIntoNewRange(MINANGULARRATE, MAXANGULARRATE, tmp);
+		LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
+		printAny(centerRot, "centerRot");
+		printAny(tabRot,"tabRot");
+		printAny(directionRot,"directionRot");
+	}
+	else{
+
+		teta = 1 ;
+	}
+	 
+}
+
+void FluidMechanics::Impl::computeEucli(){
+	if(settings->controlType == SPEED_CONTROL){
+		float tmp = euclideandist(currentDataPos, previousPos);
+		if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
+		if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
+		//if(eucli < MINEUCLIDEAN)	eucli = MINEUCLIDEAN ;	
+		//if(eucli > MAXEUCLIDEAN)	eucli = MAXEUCLIDEAN ;
+		eucli = convertIntoNewRange(MINEUCLIDEAN, MAXEUCLIDEAN, tmp);
+		LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);
+
+		//We update the previous positions and orientation
+		//Will only be used if the control mode is Speed
+		previousPos = currentDataPos ;
+	}
+	else if(settings->controlType == RATE_CONTROL_SIMPLE){
+		float tmp = euclideandist(tabPos, centerPos);
+		if(tmp < MINEUCLIDEANRATE)	tmp = MINEUCLIDEANRATE ;
+		if(tmp > MAXEUCLIDEANRATE) tmp = MAXEUCLIDEANRATE;
+		eucli = convertIntoNewRange(MINEUCLIDEANRATE, MAXEUCLIDEANRATE, tmp);
+		directionMov = tabPos - centerPos ;
+		directionMov.normalize();
+		directionMov *= eucli ;
+		LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);
+	}
+	else{
+
+		eucli = 1 ;
+	}
+	
+}
+
+
+
+
 //Code adapted from 
 //http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
 bool intersectPlane(const Vector3& n, const Vector3& p0, const Vector3& l0, const Vector3& l, float& t) 
@@ -992,7 +1085,6 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 		diff /=2 ;
 		diff /=4 ;
 		diff *= settings->precision ;
-		diff *= eucli ;
 		diff *= settings->considerTranslation * settings->considerX * settings->considerY;
 
 		Vector3 trans = Vector3(diff.x, diff.y, 0);
@@ -1057,29 +1149,6 @@ void FluidMechanics::Impl::computeFingerInteraction(){
 	}
 	
 }
-void FluidMechanics::Impl::computeAngular(){
-	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
-	directionRot = currentDataRot * previousRot.inverse();
-	float tmp = 2 * safe_acos(directionRot.w);
-	
-
-	if(tmp < MINANGULAR)		tmp = MINANGULAR ;
-	if(tmp > MAXANGULAR)		tmp = MAXANGULAR ;
-
-	teta =convertIntoNewRange(MINANGULAR, MAXANGULAR, tmp);
-	LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
-	 
-}
-
-void FluidMechanics::Impl::computeEucli(){
-	float tmp = euclideandist(currentDataPos, previousPos);
-	if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
-	if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
-	//if(eucli < MINEUCLIDEAN)	eucli = MINEUCLIDEAN ;	
-	//if(eucli > MAXEUCLIDEAN)	eucli = MAXEUCLIDEAN ;
-	eucli = convertIntoNewRange(MINEUCLIDEAN, MAXEUCLIDEAN, tmp);
-	LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);
-}
 
 void FluidMechanics::Impl::updateMatrices(){
 	Matrix4 statem ;
@@ -1112,10 +1181,9 @@ void FluidMechanics::Impl::updateMatrices(){
 	}
 	
 	
-	//We update the previous positions and orientation
-	//Will only be used if the control mode is Speed
-	previousPos = currentDataPos ;
-	previousRot = currentDataRot ;
+	
+	
+	
 
 }
 
