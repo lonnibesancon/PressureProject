@@ -1317,6 +1317,40 @@ inline Matrix4<T> Matrix4<T>::makeTransform(
 	return result;
 }
 
+
+template <typename T>
+Quaternion<T> slerp(const Quaternion<T>& q1, const Quaternion<T>& q2, float t)
+{
+	static const bool shortestPath = true;
+	static const float epsilon = 1e-3f;
+
+	Quaternion<T> qt;
+	float dot = q1.dot(q2);
+
+	if (dot < 0 && shortestPath) {
+		qt = -q2;
+		dot *= -1;
+	} else {
+		qt = q2;
+	}
+
+	if (std::abs(dot) < 1 - epsilon) {
+		float fSin = std::sqrt(1 - std::sqrt(dot));
+		float fAngle = std::atan2(fSin, dot);
+		float fInvSin = 1.0f / fSin;
+		float fCoeff0 = std::sin((1.0f - t) * fAngle) * fInvSin;
+		float fCoeff1 = std::sin(t * fAngle) * fInvSin;
+		return (fCoeff0 * q1 + fCoeff1 * qt).normalized();
+	} else {
+		return ((1.0f - t) * q1 + t * qt).normalized();
+	}
+}
+
+
+
+
+
+
 } // namespace LinearMath
 
 
@@ -1377,7 +1411,10 @@ typedef Quaternion_f Quaternion;
 
 #endif /* DOUBLE_PRECISION */
 
+
 #endif /* LINEAR_MATH_H */
+
+
 
 
 

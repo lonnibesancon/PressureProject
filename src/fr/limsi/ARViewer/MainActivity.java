@@ -324,7 +324,7 @@ public class MainActivity extends BaseARActivity
         FluidMechanics.getState(fluidState);
         fluidSettings.precision = 1 ;
         fluidSettings.translatePlane = false ;
-        fluidSettings.controlType = RATE_CONTROL_SIMPLE ;
+        fluidSettings.controlType = RATE_CONTROL;
         //fluidSettings.dataORplane = 0 ; //Data 
 
         //this.client = new Client();
@@ -745,6 +745,11 @@ public class MainActivity extends BaseARActivity
 
         mDataSet = (id % 4);
         //client.dataset = mDataSet ;
+/*
+        FluidMechanics.loadDataset(copyAssetsFileToStorage("bunny.vtk", false));
+        mVelocityDatasetLoaded = false;
+
+        return ;*/
 
         // TODO: check exceptions + display error message
         // TODO: load in background?
@@ -1595,6 +1600,8 @@ public class MainActivity extends BaseARActivity
 
 
     private void getData(byte[] data) {
+
+        Log.d("ValueSlider","test");
 
         if(fluidSettings.controlType == PRESSURE_CONTROL || fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
             value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));

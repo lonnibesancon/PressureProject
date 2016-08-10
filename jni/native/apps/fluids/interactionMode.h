@@ -49,8 +49,8 @@
 
 #define MINANGULAR			0.00005
 #define MAXANGULAR			0.15
-#define MINANGULARRATE		0.5
-#define MAXANGULARRATE		5.0
+#define MINANGULARRATE		0.05
+#define MAXANGULARRATE		1.5
 
 
 #define thresholdRST  300.0 

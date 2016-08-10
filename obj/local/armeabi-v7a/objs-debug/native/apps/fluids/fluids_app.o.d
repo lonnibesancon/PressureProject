@@ -27,18 +27,18 @@ obj/local/armeabi-v7a/objs-debug/native/apps/fluids/fluids_app.o: \
  jni/artoolkit/AR/ar.h jni/artoolkit/AR/config.h jni/artoolkit/AR/param.h \
  jni/native/tracking/multi_marker_objects.h \
  jni/native/tracking/multi_marker.h jni/native/loaders/loader_obj.h \
- jni/native/rendering/mesh.h jni/native/rendering/lines.h \
- jni/native/QCAR/QCAR.h jni/native/QCAR/System.h \
- jni/native/QCAR/CameraDevice.h jni/native/QCAR/NonCopyable.h \
- jni/native/QCAR/VideoMode.h jni/native/QCAR/CameraCalibration.h \
- jni/native/QCAR/Vectors.h jni/native/QCAR/Renderer.h \
- jni/native/QCAR/Matrices.h jni/native/QCAR/State.h \
- jni/native/QCAR/Frame.h jni/native/QCAR/VideoBackgroundConfig.h \
- jni/native/QCAR/Trackable.h jni/native/QCAR/TrackableResult.h \
- jni/native/QCAR/Tool.h jni/native/QCAR/Tracker.h \
- jni/native/QCAR/TrackerManager.h jni/native/QCAR/ImageTracker.h \
- jni/native/QCAR/UpdateCallback.h jni/native/QCAR/DataSet.h \
- jni/native/apps/fluids/interactionMode.h
+ jni/native/loaders/loader_ply.h jni/native/rendering/mesh.h \
+ jni/native/rendering/lines.h jni/native/QCAR/QCAR.h \
+ jni/native/QCAR/System.h jni/native/QCAR/CameraDevice.h \
+ jni/native/QCAR/NonCopyable.h jni/native/QCAR/VideoMode.h \
+ jni/native/QCAR/CameraCalibration.h jni/native/QCAR/Vectors.h \
+ jni/native/QCAR/Renderer.h jni/native/QCAR/Matrices.h \
+ jni/native/QCAR/State.h jni/native/QCAR/Frame.h \
+ jni/native/QCAR/VideoBackgroundConfig.h jni/native/QCAR/Trackable.h \
+ jni/native/QCAR/TrackableResult.h jni/native/QCAR/Tool.h \
+ jni/native/QCAR/Tracker.h jni/native/QCAR/TrackerManager.h \
+ jni/native/QCAR/ImageTracker.h jni/native/QCAR/UpdateCallback.h \
+ jni/native/QCAR/DataSet.h jni/native/apps/fluids/interactionMode.h
 
 jni/native/apps/fluids/fluids_app.h:
 
@@ -117,6 +117,8 @@ jni/native/tracking/multi_marker_objects.h:
 jni/native/tracking/multi_marker.h:
 
 jni/native/loaders/loader_obj.h:
+
+jni/native/loaders/loader_ply.h:
 
 jni/native/rendering/mesh.h:
 

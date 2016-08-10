@@ -12,6 +12,7 @@
 #include "tracking/multi_marker.h"
 #include "tracking/multi_marker_objects.h"
 #include "loaders/loader_obj.h"
+#include "loaders/loader_ply.h"
 #include "rendering/mesh.h"
 #include "rendering/lines.h"
 
@@ -49,6 +50,7 @@
 #include <vtkXMLPolyDataReader.h>
 
 #define NEW_STYLUS_RENDER
+#define VTK
 
 // ======================================================================
 // JNI interface
@@ -210,6 +212,7 @@ struct FluidMechanics::Impl
 	// static constexpr float stylusEffectorDist = 30.0f;
 
 	Synchronized<VolumePtr> volume;
+	//Synchronized<MeshPtr> volume;
 	// Synchronized<Volume3dPtr> volume;
 	Synchronized<IsoSurfacePtr> isosurface, isosurfaceLow;
 	Synchronized<SlicePtr> slice;
@@ -219,6 +222,7 @@ struct FluidMechanics::Impl
 	Synchronized<std::vector<Vector3>> slicePoints; // max size == 6
 
 	MeshPtr particleSphere, cylinder;
+	MeshPtr bunny ;
 	LinesPtr lines;
 
 
@@ -255,6 +259,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	axisCube.reset(new Cube(true));
 	particleSphere = LoaderOBJ::load(baseDir + "/sphere.obj");
 	cylinder = LoaderOBJ::load(baseDir + "/cylinder.obj");
+	bunny = LoaderOBJ::load(baseDir +"/bunny.obj");
 	lines.reset(new Lines);
 
 
@@ -347,6 +352,8 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	// mesh.reset();
 
 	VTKOutputWindow::install();
+
+
 
 	std::string filename("teapot.vtp") ;
 	//const std::string ext = filename.substr(fileName.find_last_of(".") + 1);
@@ -502,6 +509,7 @@ void FluidMechanics::Impl::buttonPressed()
 {
 	tangoEnabled = true ;
 
+	LOGD("BUTTON PRESSED");
 	centerPos = currentDataPos ;
 	centerRot = currentDataRot ;
 	tabRot = currentDataRot ;
@@ -516,7 +524,7 @@ void FluidMechanics::Impl::buttonPressed()
 float FluidMechanics::Impl::buttonReleased()
 {
 	tangoEnabled = false ;
-
+	LOGD("BUTTON RELEASED");
 	centerPos = currentDataPos ;
 	centerRot = currentDataRot ;
 
@@ -846,8 +854,19 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 			}
 			if(settings->controlType == RATE_CONTROL_SIMPLE){
 				tabPos+=trans ;
-				computeEucli();
-				currentDataPos += directionMov ;
+				Vector3 coordinateCorrection(1,-1,-1);
+				currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.05) + currentDataPos ;
+			}
+			if(settings->controlType == RATE_CONTROL){
+				tabPos+=trans ;
+				Vector3 diff = tabPos-centerPos ;
+				diff.x = abs(diff.x);
+				diff.y = abs(diff.y);
+				diff.z = abs(diff.z);
+				diff.x = convertIntoNewRange(0, 100, diff.x);
+				diff.y = convertIntoNewRange(0, 100, diff.y);
+				diff.z = convertIntoNewRange(0, 100, diff.z);
+				currentDataPos += trans * diff ;
 			}
 			/*if(settings->controlType == RATE_CONTROL_SIMPLE){
 				Vector3 toAdd = directionMov * eucli ;
@@ -888,9 +907,9 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 
 
-			if(settings->controlType == RATE_CONTROL_SIMPLE || settings->controlType == RATE_CONTROL){
-				tabRot = rot ;
-				//currentDataRot = currentDataRot * directionRot ;
+			if(settings->controlType == RATE_CONTROL_SIMPLE ){
+				tabRot = rot ;//* tabRot ;
+				currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
 			}
 
 			else{
@@ -916,7 +935,7 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 void FluidMechanics::Impl::computeAngular(){
 	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
 
-	if(settings->controlType == SPEED_CONTROL){
+	if(settings->controlType == SPEED_CONTROL ){
 		directionRot = currentDataRot * previousRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 		
@@ -931,7 +950,36 @@ void FluidMechanics::Impl::computeAngular(){
 		//Will only be used if the control mode is Speed
 		previousRot = currentDataRot ;
 	}
+
+	else if(settings->controlType == RATE_CONTROL ){
+		directionRot = currentDataRot * centerRot.inverse();
+		float tmp = 2 * safe_acos(directionRot.w);
+		
+
+		if(tmp < MINANGULARRATE)		tmp = MINANGULARRATE ;
+		if(tmp > MAXANGULARRATE)		tmp = MAXANGULARRATE ;
+
+		teta =convertIntoNewRange(MINANGULARRATE, MAXANGULARRATE, tmp);
+		LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
+
+		//We update the previous positions and orientation
+		//Will only be used if the control mode is Speed
+		previousRot = currentDataRot ;
+	}
+
 	else if(settings->controlType == RATE_CONTROL_SIMPLE){
+		directionRot = tabRot * centerRot.inverse();
+		float tmp = 2 * safe_acos(directionRot.w);
+		
+
+		if(tmp < MINANGULAR)		tmp = MINANGULAR ;
+		if(tmp > MAXANGULAR)		tmp = MAXANGULAR ;
+
+		teta =convertIntoNewRange(MINANGULAR, MAXANGULAR, tmp);
+		LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
+
+
+		/*
 		directionRot = tabRot * centerRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 
@@ -942,7 +990,7 @@ void FluidMechanics::Impl::computeAngular(){
 		LOGD("VALUE = %f  ----   ANGULAR SPEED = %f",tmp, teta);
 		printAny(centerRot, "centerRot");
 		printAny(tabRot,"tabRot");
-		printAny(directionRot,"directionRot");
+		printAny(directionRot,"directionRot");*/
 	}
 	else{
 
@@ -966,14 +1014,25 @@ void FluidMechanics::Impl::computeEucli(){
 		previousPos = currentDataPos ;
 	}
 	else if(settings->controlType == RATE_CONTROL_SIMPLE){
-		float tmp = euclideandist(tabPos, centerPos);
+		float tmp = euclideandist(currentDataPos, centerPos);
+		if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
+		if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
+		//if(eucli < MINEUCLIDEAN)	eucli = MINEUCLIDEAN ;	
+		//if(eucli > MAXEUCLIDEAN)	eucli = MAXEUCLIDEAN ;
+		eucli = convertIntoNewRange(MINEUCLIDEAN, MAXEUCLIDEAN, tmp);
+
+		LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);
+
+		
+
+		/*float tmp = euclideandist(tabPos, centerPos);
 		if(tmp < MINEUCLIDEANRATE)	tmp = MINEUCLIDEANRATE ;
 		if(tmp > MAXEUCLIDEANRATE) tmp = MAXEUCLIDEANRATE;
 		eucli = convertIntoNewRange(MINEUCLIDEANRATE, MAXEUCLIDEANRATE, tmp);
 		directionMov = tabPos - centerPos ;
 		directionMov.normalize();
 		directionMov *= eucli ;
-		LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);
+		LOGD("VALUE = %f  ----	 EUCLI = %f",tmp,eucli);*/
 	}
 	else{
 
@@ -1364,6 +1423,8 @@ void FluidMechanics::Impl::renderObjects()
 			Vector3(settings->zoomFactor)
 		);
 
+
+#ifdef VTK
 		//Render the outline
 		if(settings->showOutline){
 			synchronized_if(outline) {
@@ -1415,6 +1476,24 @@ void FluidMechanics::Impl::renderObjects()
 				volume->render(proj, mm);
 			}
 		}
+
+#else
+
+		// Render the volume
+		if (settings->showVolume) {// && sliceDot <= 0) {
+			glEnable(GL_DEPTH_TEST);
+			synchronized_if(volume) {
+				// glDepthMask(false);
+				glDepthMask(true);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
+				// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
+				glDisable(GL_CULL_FACE);
+				bunny->render(proj, mm);
+			}
+		}
+
+#endif
 
 	}
 
