@@ -56,4 +56,9 @@
 #define thresholdRST  300.0 
 
 
+
+#define NBTRIAL 15
+
+
+
 #endif
