@@ -50,7 +50,7 @@
 #include <vtkXMLPolyDataReader.h>
 
 #define NEW_STYLUS_RENDER
-#define VTK
+//#define VTK
 
 // ======================================================================
 // JNI interface
@@ -259,7 +259,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	axisCube.reset(new Cube(true));
 	particleSphere = LoaderOBJ::load(baseDir + "/sphere.obj");
 	cylinder = LoaderOBJ::load(baseDir + "/cylinder.obj");
-	bunny = LoaderOBJ::load(baseDir +"/bunny.obj");
+	bunny = LoaderOBJ::load(baseDir +"/bunnywire.obj");
 	lines.reset(new Lines);
 
 
