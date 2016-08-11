@@ -378,10 +378,19 @@ public class MainActivity extends BaseARActivity
 
         this.tangibleBtn = (ImageButton) findViewById(R.id.tangibleBtn);
         //this.tangibleBtn.setOnClickListener(this);
-        this.tangibleBtn.setOnTouchListener(this);
+        
+        //Fix for the experiment
+        this.tangibleBtn.setVisibility(View.GONE);
+        //this.tangibleBtn.setOnTouchListener(this);
+
+        //End fix
 
         touchToggle = (ToggleButton) findViewById(R.id.touchToggle);
-        touchToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        //Fix for the experiment
+        isTouchOn = false ;
+        touchToggle.setVisibility(View.GONE);
+
+        /*touchToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 
                 if (isChecked) {
@@ -392,11 +401,15 @@ public class MainActivity extends BaseARActivity
                 setInteractionMode();
             }
 
-        });
-
+        });*/
+        //End Fix
 
         tangibleToggle = (ToggleButton) findViewById(R.id.tangibleToggle);
-        tangibleToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        //Fix for the experiment
+        tangibleToggle.setVisibility(View.GONE);
+        isTangibleOn = true ;
+        setInteractionMode();
+        /*tangibleToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     isTangibleOn = true ;
@@ -406,8 +419,8 @@ public class MainActivity extends BaseARActivity
                 setInteractionMode();
             }
 
-        });
-
+        });*/
+        //End Fix
 
 
         bluetoothOverlay = (TextView) findViewById(R.id.textOverlay);
@@ -1215,9 +1228,10 @@ public class MainActivity extends BaseARActivity
         this.tangibleToggle.setChecked(false);
         this.touchToggle.setChecked(false);
 
-
-        isTangibleOn = false ;
-        isTouchOn = false;
+        //Fix For the experiment
+            //isTangibleOn = false ;
+            //isTouchOn = false;
+        //End
         dataORplaneTangible = true ; //Data
         dataORplaneTouch = true ;    //Data
         fluidSettings.precision = 1 ;
@@ -1347,8 +1361,8 @@ public class MainActivity extends BaseARActivity
             //Log.d(TAG,"Finger "+i+" X = "+rawPosX[i]+" Y = "+rawPosY[i]);
         }
 
-
-        if(v.getId() == R.id.tangibleBtn){
+        //FIX For the Experiment
+        /*if(v.getId() == R.id.tangibleBtn){
             int index = event.getActionIndex();
             //Log.d(TAG,"INDEX = "+fingerOnButtonIndex);
             if (event.getAction() == MotionEvent.ACTION_DOWN ){
@@ -1366,7 +1380,7 @@ public class MainActivity extends BaseARActivity
             }
             
             //return true ;
-        }
+        }*/
 
 
         //Log.d(TAG,"X = "+fluidSettings.considerX+"  -- Y = "+fluidSettings.considerY
@@ -1392,7 +1406,18 @@ public class MainActivity extends BaseARActivity
                         //FluidMechanics.addFinger(event.getX(index), event.getY(index), id);    
                         FluidMechanics.addFinger(rawPosX[index], rawPosY[index], id);    
                     }
+
+
+                    //Fix for the experiment
+                    isTangiblePressed = true ;
+                    FluidMechanics.buttonPressed();
+                    this.tangibleBtn.setPressed(true);
+                    this.nbOfFingersButton+=1 ;
+
+
+
                     break ;
+
                 }
 
                 case MotionEvent.ACTION_UP:
@@ -1410,7 +1435,17 @@ public class MainActivity extends BaseARActivity
                         }
                         
                     //}
+
+                    //Fix for the experiment
+                    FluidMechanics.buttonReleased();
+                    isTangiblePressed = false ;
+                    this.tangibleBtn.setPressed(false);
+                    this.nbOfFingersButton-=1 ;
+                    removedButtonFinger = true ;
+
+
                     break ;
+
                 }
 
                 case MotionEvent.ACTION_MOVE:
