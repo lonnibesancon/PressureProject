@@ -38,7 +38,11 @@ obj/local/armeabi-v7a/objs-debug/native/apps/fluids/fluids_app.o: \
  jni/native/QCAR/TrackableResult.h jni/native/QCAR/Tool.h \
  jni/native/QCAR/Tracker.h jni/native/QCAR/TrackerManager.h \
  jni/native/QCAR/ImageTracker.h jni/native/QCAR/UpdateCallback.h \
- jni/native/QCAR/DataSet.h jni/native/apps/fluids/interactionMode.h
+ jni/native/QCAR/DataSet.h jni/native/apps/fluids/interactionMode.h \
+ /Users/lonnibesancon/Library/Android/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.8/include/chrono \
+ /Users/lonnibesancon/Library/Android/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.8/include/future \
+ jni/native/exp/participant.h \
+ /Users/lonnibesancon/Library/Android/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.8/include/algorithm
 
 jni/native/apps/fluids/fluids_app.h:
 
@@ -165,3 +169,11 @@ jni/native/QCAR/UpdateCallback.h:
 jni/native/QCAR/DataSet.h:
 
 jni/native/apps/fluids/interactionMode.h:
+
+/Users/lonnibesancon/Library/Android/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.8/include/chrono:
+
+/Users/lonnibesancon/Library/Android/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.8/include/future:
+
+jni/native/exp/participant.h:
+
+/Users/lonnibesancon/Library/Android/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.8/include/algorithm:

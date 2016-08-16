@@ -13,7 +13,7 @@ public:
 	int getAllTargetsString();
 
 	Participant(int p, std::string path);
-	void addData(Matrix4 currentPos, Quaternion currentRot, precision);
+	void addData(Matrix4 currentPos, Quaternion currentRot, float precision);
 
 
 private:
@@ -39,6 +39,6 @@ private:
 
 
 
-}
+};
 
 #endif /* LOADER_OBJ_H */

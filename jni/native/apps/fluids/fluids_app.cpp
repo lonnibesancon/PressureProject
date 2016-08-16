@@ -47,7 +47,16 @@
 #include "interactionMode.h"
 // #include <QCAR/Image.h>
 
+#include <functional>
+#include <chrono>
+#include <future>
+#include <cstdio>
+
+
+
 #include <vtkXMLPolyDataReader.h>
+
+#include "exp/participant.h"
 
 #define NEW_STYLUS_RENDER
 //#define VTK
@@ -77,6 +86,11 @@ extern "C" {
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_addFinger(JNIEnv* env, jobject obj, jfloat x, jfloat y, jint fingerID);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_removeFinger(JNIEnv* env, jobject obj, jint fingerID);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_reset(JNIEnv* env, jobject obj);
+    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_launchTrial(JNIEnv* env, jobject obj);
+    JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isTrialOver(JNIEnv* env, jobject obj);
+    //Initialize everything to call a java function
+    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* env, jobject obj);
+    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
 }
 
 // (end of JNI interface)
@@ -89,6 +103,38 @@ struct Particle
 	int delayMs, stallMs;
 	timespec lastTime;
 };
+
+//For calling java functions from NDK
+
+jclass javaClassRef;
+jmethodID javaMethodRef;
+JNIEnv* env ;
+jobject obj ;
+static JavaVM* g_jvm = 0;
+
+
+// See http://stackoverflow.com/questions/14650885/how-to-create-timer-events-using-c-11
+
+/*template <class callable, class... arguments>
+void later(int after, bool async, callable&& f, arguments&&... args)
+{
+    std::function<typename std::result_of<callable(arguments...)>::type()> task(std::bind(std::forward<callable>(f), std::forward<arguments>(args)...));
+
+    if (async)
+    {
+        std::thread([after, task]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(after));
+            task();
+        }).detach();
+    }
+    else
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(after));
+        task();
+    }
+}*/
+
+
 
 struct FluidMechanics::Impl
 {
@@ -137,6 +183,9 @@ struct FluidMechanics::Impl
 	float convertIntoNewRange(float oldRangeMin, float oldRangeMax, float value);
 	void computeAngular();
 	void computeEucli();
+
+
+
 
 	Vector3 posToDataCoords(const Vector3& pos); // "pos" is in eye coordinates
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
@@ -243,7 +292,20 @@ struct FluidMechanics::Impl
 	bool effectorIntersectionValid;
 
 	bool buttonIsPressed;
+
+
+	//Trial Handling
+	void launchTrial();
+	bool isTrialOver();
+	void endTrial();
+	void log();
+	void timer();
+	void initJNI();
+	bool isOver = true ;
+
+
 };
+
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
  : currentSliceRot(Quaternion(Vector3::unitX(), M_PI)),
@@ -274,6 +336,55 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	
 	targetId = 0 ;
 }
+
+void FluidMechanics::Impl::initJNI(){
+
+}
+
+void FluidMechanics::Impl::launchTrial(){
+	//TODO	
+	LOGD("LaunchTrial");
+	isOver = false ;
+	interactionMode = dataTangible ;
+	std::thread timerTrial(&FluidMechanics::Impl::endTrial,this);
+	timerTrial.detach();
+	std::thread timerLog(&FluidMechanics::Impl::log,this);
+	timerLog.detach();
+	//main is blocked until funcTest1 is not finished
+	//timerTrial.join();
+}
+
+bool FluidMechanics::Impl::isTrialOver(){
+	//TOFIX
+	//endTrial();
+	return isOver ;
+}
+
+void FluidMechanics::Impl::timer(){
+	
+}
+
+void FluidMechanics::Impl::endTrial(){
+	printAny(isOver,"COUCOU");
+	usleep(5000000);
+	LOGD("TIMER ENDS");
+	isOver = true ;
+	interactionMode = 0 ; 
+	Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
+	return ;
+}
+
+void FluidMechanics::Impl::log(){
+	while(isOver == false){
+		usleep(25);
+		LOGD("TIMER LOG");	
+	}
+	return ;
+
+}
+
+
+
 
 void FluidMechanics::Impl::reset(){
 	seedingPoint = Vector3(-1,-1,-1);
@@ -1858,6 +1969,135 @@ JNIEXPORT void Java_fr_limsi_ARViewer_FluidMechanics_removeFinger(JNIEnv* env, j
 }
 
 
+JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_launchTrial(JNIEnv* env, jobject obj)
+{
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		instance->launchTrial();
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+}
+
+JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isTrialOver(JNIEnv* env, jobject obj)
+{
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		return instance->isTrialOver();
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+		return false;
+	}
+}
+
+JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* en, jobject ob)
+{
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		
+		/*FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		jclass dataClass = en->FindClass("fr/limsi/ARViewer/MainActivity");
+	    javaClassRef = (jclass) env->NewGlobalRef(dataClass);
+	    javaMethodRef = env->GetMethodID(javaClassRef, "endTrial", "()V");
+
+
+	    int status = env->GetJavaVM(env, &jvm);
+	    if(status != 0) {
+	        LOGD("JNIERROR");
+	    }*/
+	     // insted of the env store the VM
+	    int status = en->GetJavaVM(&g_jvm);
+	    jclass dataClass = en->FindClass("fr/limsi/ARViewer/MainActivity");
+	    javaClassRef = (jclass) en->NewGlobalRef(dataClass);
+	    javaMethodRef = en->GetMethodID(javaClassRef, "endTrial", "()V");
+	    if(status != 0) {
+	        LOGD("-------->JNIERROR");
+	    }
+	    else if(javaMethodRef == NULL){
+	    	LOGD("-------->METHODREFERROR");
+	    }
+	    else{
+	    	LOGD("-------->JNIOK");
+	    }
+	    /*obj = en->NewGlobalRef(ob); // I don't think you need this
+	    // and at some point you must delete it again*/
+
+	    LOGD("JNIINITDONE");
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+}
+
+JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava(){
+	/*jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
+	env->CallVoidMethod(javaObjectRef, javaMethodRef);*/
+	/*JNIEnv *env;
+    jvm->AttachCurrentThread((void **)&env, jvm);
+    jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
+    env->CallVoidMethod(javaObjectRef, javaMethodRef);*/
+    
+    // See 
+    JNIEnv* env;
+
+    int getEnvStat = g_jvm->GetEnv((void **)&env, JNI_VERSION_1_6);
+    if (getEnvStat == JNI_EDETACHED) {
+        LOGD("GetEnv: not attached");
+        //if (g_jvm->AttachCurrentThread((void **) &env, NULL) != 0) {
+        if (g_jvm->AttachCurrentThread(&env, NULL) != 0) {
+            LOGD("Failed to attach");
+        }
+        else{
+        	jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
+        	env->CallVoidMethod(javaObjectRef, javaMethodRef);
+        }
+    } else if (getEnvStat == JNI_OK) {
+        //
+    } else if (getEnvStat == JNI_EVERSION) {
+        LOGD("GetEnv: version not supported");
+    }
+
+    //See http://stackoverflow.com/questions/26534304/android-jni-call-attachcurrentthread-without-detachcurrentthread
+    g_jvm->DetachCurrentThread();
+
+    //g_jvm->AttachCurrentThread(&env, NULL); // check error etc
+    //jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
+    // this line makes not much sense. I think you don't need it if you use the global
+    // with the global it would be more like this
+    //env->CallVoidMethod(javaObjectRef, javaMethodRef);
+}
+
+
+
 FluidMechanics::FluidMechanics(const InitParams& params)
  : NativeApp(params, SettingsPtr(new FluidMechanics::Settings), StatePtr(new FluidMechanics::State)),
    impl(new Impl(params.baseDir))
@@ -1945,3 +2185,16 @@ void FluidMechanics::setTangoValues(double tx, double ty, double tz, double rx, 
 void FluidMechanics::setGyroValues(double rx, double ry, double rz, double q){
 	impl->setGyroValues(rx,ry,rz,q);
 }
+
+void FluidMechanics::launchTrial(){
+	impl->launchTrial();
+}
+
+bool FluidMechanics::isTrialOver(){
+	return impl->isTrialOver();
+}
+/*
+void FluidMechanics::initJNI(){
+	impl->initJNI();
+}*/
+

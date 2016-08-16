@@ -48,6 +48,8 @@ public interface InteractionMode{
 	public static final float MAXPRESSURE 	= 3 ;
 	public static final float MINPRESSURE	= 0.5f ;
 
+	public static final int NBTRIALS	= 15 ;
+
 	//LOGGING HELP
 
 

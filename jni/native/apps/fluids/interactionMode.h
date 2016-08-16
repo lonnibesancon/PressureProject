@@ -57,7 +57,8 @@
 
 
 
-#define NBTRIAL 15
+#define NBTRIALS 15
+#define TIME	2
 
 
 

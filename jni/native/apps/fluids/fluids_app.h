@@ -26,6 +26,8 @@ public:
 	void removeFinger(int fingerID);
 	void reset();
 	void resetParticles();
+	void launchTrial();
+	bool isTrialOver();
 
     std::string getData();
 
@@ -101,6 +103,7 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 	bool isSeeding = false ;
 	int dataORplane = 0 ; //Data
 	int controlType = 0 ;
+	int pID = 0 ;
 
 	void read(JNIEnv* env, jobject obj, jclass cls) const
 	{
@@ -125,12 +128,10 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 		SET_JNI_FIELD(obj, dataORplane, Int, "I", dataORplane);		
 
 		SET_JNI_FIELD(obj, sliceType, Int, "I", sliceType);
-
 		SET_JNI_FIELD(obj, surfacePercentage, Double, "D", surfacePercentage);
-
 		SET_JNI_FIELD(obj, precision, Float, "F", precision);
-
-		SET_JNI_FIELD(obj, controlType, Int, "I", controlType);		
+		SET_JNI_FIELD(obj, controlType, Int, "I", controlType);
+		SET_JNI_FIELD(obj, pID, Int, "I", pID);	
 	}
 
 	void write(JNIEnv* env, jobject obj, jclass cls)
@@ -158,6 +159,7 @@ struct FluidMechanics::Settings : public NativeApp::Settings
 		GET_JNI_FIELD(obj, dataORplane, Int, "I", dataORplane);	
 
 		GET_JNI_FIELD(obj, controlType, Int, "I", controlType);
+		GET_JNI_FIELD(obj, pID, Int, "I", pID);
 
 		int st;
 		GET_JNI_FIELD(obj, sliceType, Int, "I", st);

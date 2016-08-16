@@ -232,6 +232,9 @@ public class MainActivity extends BaseARActivity
     private LinearLayout dataLayout;
 
     private float value ;
+    private short trialNumber = 0 ;
+    private boolean trialFinished = false ;
+
 
     final private static short NO_CONTROL               = 0 ;
     final private static short RATE_CONTROL             = 1 ;
@@ -268,7 +271,10 @@ public class MainActivity extends BaseARActivity
                 }
                 else{
                     pId = p ;
+                    fluidSettings.pID = p ;
+                    updateSettings();
                     openFile();
+                    launchTrial();
                 }
             }
             
@@ -306,6 +312,78 @@ public class MainActivity extends BaseARActivity
             }
         }, 0L, logrefreshrate , TimeUnit.MILLISECONDS);
 
+    }
+
+    public void showAlerts(){
+        //We need to show that they're gonna use a new technique
+        if(/*trialNumber != 0 &&*/ trialNumber%15 == 0){
+            alertBeforeNewTechnique();
+        }
+        else{
+            alertBeforeTrial();    
+        }
+        
+    }
+
+    public void alertBeforeNewTechnique(){
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle("Next Technique");
+        alert.setMessage("You will now try an other technique");
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int whichButton) {
+            alertBeforeTrial();
+            return ;
+          
+          }
+        });
+
+        alert.show();
+    }
+
+    public void launchTrial(){
+        if(FluidMechanics.isTrialOver()){
+            showAlerts();
+            trialFinished = false ;
+        }
+        /*while (trialNumber < 4 * NBTRIALS){
+            showAlerts();
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    FluidMechanics.isTrialOver();
+                }
+            }, 10000);
+            trialNumber++ ;
+        }*/
+        
+    }
+
+    public void endTrial(){
+        if(trialFinished == false){
+            Log.d("TEST","End Trial");
+            trialFinished = true ;
+            showAlerts();    
+        }
+        
+    }
+
+    public void alertBeforeTrial(){
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle("Next Trial");
+        alert.setMessage("Click ok when you're ready for the next trial");
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int whichButton) {
+            FluidMechanics.launchTrial();
+            return ;   
+          
+          }
+        });
+
+        alert.show();
+        
     }
 
     @Override
@@ -460,7 +538,8 @@ public class MainActivity extends BaseARActivity
         //launchBluetooth();
         //scanBluetooth();
         setStateOverlay();
-        
+        FluidMechanics.initJNI();
+
     }
 
     private void setInteractionMode(){
@@ -1488,6 +1567,7 @@ public class MainActivity extends BaseARActivity
             //client.setData(FluidMechanics.getData());
             //Log.d(TAG,"Request Render");
             //loggingFunction(); 
+            //launchTrial();
         }
             
    } 
