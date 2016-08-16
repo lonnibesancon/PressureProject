@@ -234,6 +234,7 @@ public class MainActivity extends BaseARActivity
     private float value ;
     private short trialNumber = 0 ;
     private boolean trialFinished = false ;
+    final private Context context = this ;
 
 
     final private static short NO_CONTROL               = 0 ;
@@ -326,7 +327,7 @@ public class MainActivity extends BaseARActivity
     }
 
     public void alertBeforeNewTechnique(){
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        AlertDialog.Builder alert = new AlertDialog.Builder(context);
         alert.setTitle("Next Technique");
         alert.setMessage("You will now try an other technique");
 
@@ -337,14 +338,16 @@ public class MainActivity extends BaseARActivity
           
           }
         });
-
-        alert.show();
+        AlertDialog alertdialog = alert.create();
+        alertdialog.show();
+        //alert.show();
     }
 
     public void launchTrial(){
         if(FluidMechanics.isTrialOver()){
             showAlerts();
             trialFinished = false ;
+            trialNumber++ ;
         }
         /*while (trialNumber < 4 * NBTRIALS){
             showAlerts();
@@ -364,13 +367,14 @@ public class MainActivity extends BaseARActivity
         if(trialFinished == false){
             Log.d("TEST","End Trial");
             trialFinished = true ;
-            showAlerts();    
+            showAlerts();
+               
         }
         
     }
 
     public void alertBeforeTrial(){
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        AlertDialog.Builder alert = new AlertDialog.Builder(context);
         alert.setTitle("Next Trial");
         alert.setMessage("Click ok when you're ready for the next trial");
 
@@ -381,8 +385,9 @@ public class MainActivity extends BaseARActivity
           
           }
         });
-
-        alert.show();
+        AlertDialog alertdialog = alert.create();
+        alertdialog .show();
+        //alert.show();
         
     }
 

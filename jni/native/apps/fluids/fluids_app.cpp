@@ -2066,6 +2066,7 @@ JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava(){
     jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
     env->CallVoidMethod(javaObjectRef, javaMethodRef);*/
     
+    LOGD("EndTrialJava");
     // See 
     JNIEnv* env;
 
