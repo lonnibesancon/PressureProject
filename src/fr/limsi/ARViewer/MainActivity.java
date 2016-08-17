@@ -1575,9 +1575,16 @@ public class MainActivity extends BaseARActivity
             //loggingFunction(); 
             if(FluidMechanics.isTrialOver() && !mAlertVisible && idRegistered ){ 
                 //The last one is here to prevent the dialogs from showing up first
+                
                 mAlertVisible = true;
                 mHandler.post(new Runnable() {
                     public void run(){
+                        try{
+                            Thread.sleep(1000); // A little pause for the logging to be saved
+                        }
+                        catch(InterruptedException e){
+                            Log.d("Error on sleep","Error while puttin the UI thread to sleep waiting for the logging");
+                        }
                         Log.d("Runnable","Show Alert");
                         showAlerts();
                         Log.d("Runnable","End Show Alert");

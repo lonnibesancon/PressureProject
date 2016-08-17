@@ -374,9 +374,10 @@ void FluidMechanics::Impl::endTrial(){
 	LOGD("Trial End");
 	isOver = true ;
 	interactionMode = 0 ; 
-	settings->controlType = participant.getCondition();
 	reset();
 	participant.resetTrial();
+	settings->controlType = participant.getCondition();
+	
 
 	//Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
 	return ;
