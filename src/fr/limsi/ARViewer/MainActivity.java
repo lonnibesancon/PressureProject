@@ -320,6 +320,23 @@ public class MainActivity extends BaseARActivity
     }
 
     public void showAlerts(){
+        //When it's done
+        if(trialNumber == 45){
+            AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+            alert.setTitle("Thanks for your participation");
+            alert.setMessage("Thanks a lot for participating in the study!!!!");
+
+            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                System.exit(0);
+                return ;
+              
+              }
+            });
+            AlertDialog alertdialog = alert.create();
+            alertdialog.show();
+        }
+
         //We need to show that they're gonna use a new technique
         if(trialNumber != 0 && trialNumber%15 == 0){
             alertBeforeNewTechnique();
@@ -332,8 +349,8 @@ public class MainActivity extends BaseARActivity
 
     public void alertBeforeNewTechnique(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-        alert.setTitle("Next Technique");
-        alert.setMessage("You will now try an other technique");
+        alert.setTitle("----Next Technique----");
+        alert.setMessage("You are now done with the current technique, it's time to evaluate it! \nYou will now try an other technique. Touch ok when you're ready");
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface dialog, int whichButton) {

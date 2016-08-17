@@ -215,7 +215,7 @@ void Participant::resetTrial(){
 	timestamps.clear();
 	logDiffValues.clear();
 	currentTargetID ++ ;
-	if(currentTargetID%14 == 0){
+	if(currentTargetID%15 == 0){
 		LOGD("LOG Changed condition");
 		resetCondition();
 	}
@@ -224,6 +224,7 @@ void Participant::resetTrial(){
 void Participant::resetCondition(){
 	currentTargetID = 0 ;
 	currentConditionID ++ ;
+	generateAllTargets();
 	getPermutationTrials();
 
 }

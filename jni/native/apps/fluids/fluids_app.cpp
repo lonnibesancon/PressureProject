@@ -346,7 +346,7 @@ void FluidMechanics::Impl::initJNI(){
 }
 
 void FluidMechanics::Impl::launchTrial(){
-	LOGD("LaunchTrial");
+	LOGD("LaunchTrial with pID value = %d", settings->pID);
 	participant.setValues(settings->pID,directory);
 	isOver = false ;
 	interactionMode = dataTangible ;
