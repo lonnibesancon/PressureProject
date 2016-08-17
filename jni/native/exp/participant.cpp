@@ -215,7 +215,7 @@ void Participant::resetTrial(){
 	timestamps.clear();
 	logDiffValues.clear();
 	currentTargetID ++ ;
-	if(currentConditionID%14 == 0){
+	if(currentTargetID%14 == 0){
 		LOGD("LOG Changed condition");
 		resetCondition();
 	}
