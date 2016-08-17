@@ -232,9 +232,12 @@ public class MainActivity extends BaseARActivity
     private LinearLayout dataLayout;
 
     private float value ;
-    private short trialNumber = 0 ;
+    private short trialNumber = 1 ;
     private boolean trialFinished = false ;
+    private boolean mAlertVisible = false ;
+    private boolean idRegistered = false ;
     final private Context context = this ;
+    private Handler mHandler ;
 
 
     final private static short NO_CONTROL               = 0 ;
@@ -275,7 +278,8 @@ public class MainActivity extends BaseARActivity
                     fluidSettings.pID = p ;
                     updateSettings();
                     openFile();
-                    launchTrial();
+                    idRegistered = true ;
+                    showAlerts();
                 }
             }
             
@@ -317,7 +321,7 @@ public class MainActivity extends BaseARActivity
 
     public void showAlerts(){
         //We need to show that they're gonna use a new technique
-        if(/*trialNumber != 0 &&*/ trialNumber%15 == 0){
+        if(trialNumber != 0 && trialNumber%15 == 0){
             alertBeforeNewTechnique();
         }
         else{
@@ -327,7 +331,7 @@ public class MainActivity extends BaseARActivity
     }
 
     public void alertBeforeNewTechnique(){
-        AlertDialog.Builder alert = new AlertDialog.Builder(context);
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         alert.setTitle("Next Technique");
         alert.setMessage("You will now try an other technique");
 
@@ -344,49 +348,45 @@ public class MainActivity extends BaseARActivity
     }
 
     public void launchTrial(){
-        if(FluidMechanics.isTrialOver()){
-            showAlerts();
-            trialFinished = false ;
-            trialNumber++ ;
-        }
-        /*while (trialNumber < 4 * NBTRIALS){
-            showAlerts();
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    FluidMechanics.isTrialOver();
-                }
-            }, 10000);
-            trialNumber++ ;
-        }*/
-        
+       
+        FluidMechanics.launchTrial();
+        trialNumber ++ ; 
+        Log.d("TrialNumber",""+trialNumber);
     }
 
     public void endTrial(){
         if(trialFinished == false){
             Log.d("TEST","End Trial");
             trialFinished = true ;
-            showAlerts();
+            mHandler.post(new Runnable(){
+                public void run(){
+                    showAlerts();
+                    /*//Be sure to pass your Activity class, not the Thread
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MyActivity.this);
+                    //... setup dialog and show*/
+                }
+            });
+            
                
         }
         
     }
 
     public void alertBeforeTrial(){
-        AlertDialog.Builder alert = new AlertDialog.Builder(context);
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         alert.setTitle("Next Trial");
         alert.setMessage("Click ok when you're ready for the next trial");
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface dialog, int whichButton) {
-            FluidMechanics.launchTrial();
+            launchTrial();
+            mAlertVisible = false ; // So that we'll display the next alert when the trial is Over
             return ;   
           
           }
         });
         AlertDialog alertdialog = alert.create();
-        alertdialog .show();
+        alertdialog.show();
         //alert.show();
         
     }
@@ -397,6 +397,7 @@ public class MainActivity extends BaseARActivity
         boolean wasInitialized = isInitialized();
 
         super.onCreate(savedInstanceState);
+        mHandler=new Handler();
 
         if (!isInitialized()) // || !isCameraAvailable())
             return;
@@ -1567,12 +1568,23 @@ public class MainActivity extends BaseARActivity
 
    public void requestRender(){
         if (mView != null){
-            //Log.d(TAG,"RequestRender");
+            Log.d(TAG,"RequestRender");
             mView.requestRender();
             //client.setData(FluidMechanics.getData());
             //Log.d(TAG,"Request Render");
             //loggingFunction(); 
-            //launchTrial();
+            if(FluidMechanics.isTrialOver() && !mAlertVisible && idRegistered ){ 
+                //The last one is here to prevent the dialogs from showing up first
+                mAlertVisible = true;
+                mHandler.post(new Runnable() {
+                    public void run(){
+                        Log.d("Runnable","Show Alert");
+                        showAlerts();
+                        Log.d("Runnable","End Show Alert");
+                    }
+                });
+                
+            }
         }
             
    } 

@@ -58,7 +58,7 @@
 
 
 #define NBTRIALS 15
-#define TIME	2
+#define TIME	1000000
 
 
 

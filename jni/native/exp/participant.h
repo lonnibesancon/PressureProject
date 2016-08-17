@@ -9,11 +9,11 @@ class Participant{
 
 public:
 	int getNextCondition();
-	std::vector <std::tuple<Matrix4,Quaternion>> getNextTarget();
+	std::vector <std::tuple<Vector3,Quaternion>> getNextTarget();
 	int getAllTargetsString();
 
 	Participant(int p, std::string path);
-	void addData(Matrix4 currentPos, Quaternion currentRot, float precision);
+	void addData(Vector3 currentPos, Quaternion currentRot, float precision);
 
 
 private:
@@ -24,13 +24,13 @@ private:
 	std::string filepath ;
 
 	std::vector<int> conditions ;
-	std::vector<std::tuple<Matrix4,Quaternion>> logPositions ;
-	std::vector<std::tuple<Matrix4,Quaternion>> logDifference ;
+	std::vector<std::tuple<Vector3,Quaternion>> logPositions ;
+	std::vector<std::tuple<Vector3,Quaternion>> logDifference ;
 	std::vector<int> timestamps ;
 	std::vector<float> precision ;
 
 
-	std::vector<std::tuple<Matrix4,Quaternion>> targets ;
+	std::vector<std::tuple<Vector3,Quaternion>> targets ;
 
 
 	void getPermutationTrials();

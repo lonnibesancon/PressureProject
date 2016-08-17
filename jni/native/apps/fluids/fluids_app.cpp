@@ -342,7 +342,6 @@ void FluidMechanics::Impl::initJNI(){
 }
 
 void FluidMechanics::Impl::launchTrial(){
-	//TODO	
 	LOGD("LaunchTrial");
 	isOver = false ;
 	interactionMode = dataTangible ;
@@ -357,6 +356,7 @@ void FluidMechanics::Impl::launchTrial(){
 bool FluidMechanics::Impl::isTrialOver(){
 	//TOFIX
 	//endTrial();
+	printAny(isOver,"TrialOver");
 	return isOver ;
 }
 
@@ -366,11 +366,11 @@ void FluidMechanics::Impl::timer(){
 
 void FluidMechanics::Impl::endTrial(){
 	printAny(isOver,"COUCOU");
-	usleep(5000000);
+	usleep(TIME);
 	LOGD("TIMER ENDS");
 	isOver = true ;
 	interactionMode = 0 ; 
-	Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
+	//Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
 	return ;
 }
 
@@ -988,6 +988,8 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 			else{
 				currentDataPos +=trans ;
 			}
+
+			printAny(currentDataPos, "Data Pos");
 		}
 		
 		//updateMatrices();
@@ -1027,7 +1029,7 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 				currentDataRot = rot;	
 			}
 			
-			printAny(currentDataRot, "Rot");
+			printAny(currentDataRot, "Data Rot");
 
 			
 
@@ -2066,6 +2068,8 @@ JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava(){
     jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
     env->CallVoidMethod(javaObjectRef, javaMethodRef);*/
     
+    return ;
+
     LOGD("EndTrialJava");
     // See 
     JNIEnv* env;
