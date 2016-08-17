@@ -13,7 +13,12 @@ public:
 	int getAllTargetsString();
 
 	Participant(int p, std::string path);
-	void addData(Vector3 currentPos, Quaternion currentRot, float precision);
+	Participant();
+	void setValues(int p, std::string path);
+	void addData(Vector3 currentPos, Quaternion currentRot, float prec, int timestamp);
+	void resetTrial();
+	void resetCondition();
+	int getCondition();
 
 
 private:
@@ -26,6 +31,7 @@ private:
 	std::vector<int> conditions ;
 	std::vector<std::tuple<Vector3,Quaternion>> logPositions ;
 	std::vector<std::tuple<Vector3,Quaternion>> logDifference ;
+	std::vector<std::tuple<double,double>> logDiffValues ;
 	std::vector<int> timestamps ;
 	std::vector<float> precision ;
 
@@ -36,6 +42,7 @@ private:
 	void getPermutationTrials();
 	void getPermutationCondition();
 	void generateAllTargets();
+	void performLog();
 
 
 

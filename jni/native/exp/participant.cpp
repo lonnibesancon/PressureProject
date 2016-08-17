@@ -2,14 +2,48 @@
 #include <algorithm>  // for std::sort, std::next_permutation
 #include <string>
 #include "../apps/fluids/interactionMode.h"
+#include <stdio.h>
+#include <fstream>
+#include <sys/stat.h>
+#include <cerrno>
+
+#include<sstream>
+template <typename T>
+std::string to_string(T value)
+{
+  //create an output string stream
+  std::ostringstream os ;
+
+  //throw the value into the string stream
+  os << value ;
+
+  //convert the string stream into a string and return
+  return os.str() ;
+}
+
 
 Participant::Participant(int p, std::string path){
+	generateAllTargets();
 	pID = p ;
 	filepath = path ;
 	conditions = {1,2,3,4} ;
 	getPermutationCondition();
 	currentConditionID = 0 ;
 	currentTargetID = 0 ;
+}
+
+Participant::Participant(){
+	generateAllTargets();
+	conditions = {1,2,3,4} ;
+	getPermutationCondition();
+	currentConditionID = 0 ;
+	currentTargetID = 0 ;
+}
+
+void Participant::setValues(int p, std::string path){
+	pID = p ;
+	filepath = path+"log/" ;
+	printAny(filepath, "FilePath Set to ");
 }
 
 void Participant::getPermutationCondition(){
@@ -28,6 +62,7 @@ void Participant::getPermutationTrials(){
     srand(seed);
     for (int i=0; i<(NBTRIALS); i++) {
         int r = i + (rand() % (NBTRIALS-i)); // Random remaining position.
+        printAny(i, "AAAAA");
         if( i != 0 && r != 0){
             std::tuple<Vector3,Quaternion> temp = targets[i]; 
             targets[i] = targets[r]; 
@@ -36,14 +71,176 @@ void Participant::getPermutationTrials(){
         
     }
 
-    /*for(int i=0;i<NBTRIALS;i++){
-        std::cout << get<0>(trialTargetsMouse[i]) << " ; " ;
-        //*outfile << get<0>(trialTargets[i]) << " ; " ;
-    }*/
+}
 
+//Has to be called after the reset
+int Participant::getCondition(){
+	return conditions[currentConditionID] ;
+}
+
+void Participant::performLog(){
+	//See http://stackoverflow.com/questions/11294487/android-writing-saving-files-from-native-code-only
+
+	// sometimes if this is the first time we run the app 
+    // then we need to create the internal storage "files" directory
+    /*struct stat sb;
+    int32_t res = stat(dataPath.c_str(), &sb);
+    std::string cond = "";
+    if (0 == res && sb.st_mode & S_IFDIR)
+    {
+        LOGD("'files/' dir already in app's internal data storage.");
+    }
+    else if (ENOENT == errno)
+    {
+        res = mkdir(dataPath.c_str(), 0770);
+    }
+
+    if (0 == res)
+    {
+    	switch(conditions[currentConditionID]){
+    		case 1:
+    			cond = "rate_control";
+    			break ;
+    		case 2:
+    			cond = "speed_control";
+    			break ;
+    		case 3:
+    			cond = "pressure_control";
+    			break ;
+    		case 4:
+    			cond = "slider_control";
+    			break ;
+    	}*/
+
+    // First we check whether log exists
+    struct stat sb;
+    int32_t res = stat(filepath.c_str(), &sb);
+    LOGD("LOGWRITING path = %s",filepath.c_str());
+    if (0 == res && sb.st_mode & S_IFDIR)
+    {
+        LOGD("LOGWRITING 'log/' dir already in app's internal data storage.");
+    }
+    else if (ENOENT == errno)
+    {
+        res = mkdir(filepath.c_str(), 0770);
+        LOGD("LOGWRITING no directory log");
+    }
+
+    if (0 == res)
+    {
+
+    	std::string cond = "";
+    	switch(conditions[currentConditionID]){
+    		case 1:
+    			cond = "rate_control";
+    			break ;
+    		case 2:
+    			cond = "speed_control";
+    			break ;
+    		case 3:
+    			cond = "pressure_control";
+    			break ;
+    		case 4:
+    			cond = "slider_control";
+    			break ;
+    	}
+    	
+
+    	//Then we check whether this participant folder exists
+    	std::string finalPath = filepath +"P"+to_string(pID) + "/";
+    	LOGD("LOGWRITING path = %s",finalPath.c_str());
+    	res = stat(finalPath.c_str(), &sb);
+	    if (0 == res && sb.st_mode & S_IFDIR)
+	    {
+	        LOGD("LOGWRITING 'PiD/' dir already in app's internal data storage.");
+	    }
+	    else if (ENOENT == errno)
+	    {
+	        res = mkdir(finalPath.c_str(), 0770);
+	        LOGD("LOGWRITING no directory Pid");
+	    }
+
+	    if (0 == res){
+
+
+	    	//Finally we check for the condition folder
+	    	finalPath += cond + "/";
+	    	LOGD("LOGWRITING path = %s",finalPath.c_str());
+	    	res = stat(finalPath.c_str(), &sb);
+		    if (0 == res && sb.st_mode & S_IFDIR)
+		    {
+		        LOGD("LOGWRITING 'Condition' dir already in app's internal data storage.");
+		    }
+		    else if (ENOENT == errno)
+		    {
+		        res = mkdir(finalPath.c_str(), 0770);
+		        LOGD("LOGWRITING no directory condition");
+		    }
+
+		    if (0 == res){
+		    	finalPath += to_string(currentTargetID)+".csv" ;
+				LOGD("LOGWRITING File log is %s \n", finalPath.c_str());
+		    	FILE* logFile = std::fopen(finalPath.c_str(), "w+");
+		    	std::string line ;
+
+		    	if(logFile!=NULL){
+		    		//The header first
+		    		line = "Timestamp;CurrentConditionID;CurrentTargetID;Precision;DataPosition;DataOrientation;EuclideanDist;AngularDist;TargetPosition;TargetOrientation" ;
+			    	fputs(line.c_str(), logFile);
+			        fflush(logFile);
+			        //The we populate the file with the data
+		    		for(int i = 0 ; i < logPositions.size(); i++){
+		    			line = 	 to_string(timestamps[i])+";"+to_string(conditions[currentConditionID])+";"+to_string(currentTargetID)
+		    					+to_string(precision[i])+";"+to_string(std::get<0>(logPositions[i]))+";"+to_string(std::get<1>(logPositions[i]))+";"
+		    					+to_string(std::get<0>(logDiffValues[i]))+";"+to_string(std::get<1>(logDiffValues[i]))
+		    					+";"+to_string(std::get<0>(targets[currentTargetID]))+";"+to_string(std::get<1>(targets[currentTargetID]))+"\n" ;
+		    			
+		    			fputs(line.c_str(), logFile);
+			        	fflush(logFile);
+		    		}
+		    	}
+		    	std::fclose(logFile);
+
+		    }
+	    }
+
+    }
+}
+
+void Participant::resetTrial(){
+	//First we need to log everything
+	performLog();
+	logPositions.clear();
+	precision.clear();
+	timestamps.clear();
+	logDiffValues.clear();
+	currentTargetID ++ ;
+	if(currentConditionID%14 == 0){
+		LOGD("LOG Changed condition");
+		resetCondition();
+	}
+	
+}
+void Participant::resetCondition(){
+	currentTargetID = 0 ;
+	currentConditionID ++ ;
+	getPermutationTrials();
+
+}
+void Participant::addData(Vector3 currentPos, Quaternion currentRot, float prec, int timestamp){
+	logPositions.push_back(std::tuple<Vector3,Quaternion>(currentPos, currentRot));
+	precision.push_back(prec);
+	timestamps.push_back(timestamp*TIMELOG);
+	
+	float eucli = euclideandist(currentPos,std::get<0>(targets[currentConditionID]));
+	Quaternion directionRot = currentRot * std::get<1>(targets[currentConditionID]).inverse();
+	float angular = 2 * safe_acos(directionRot.w);
+
+	logDiffValues.push_back(std::tuple<float,float>(eucli,angular));
 }
 
 void Participant::generateAllTargets(){
+	targets.clear(); 	//Just to make sure that if called twice it won't mess up the target generation
 	targets.push_back(std::tuple<Vector3,Quaternion>(Vector3(34.4052, 20.5995, 110.312)		,Quaternion(0.17284, -0.027112, 0.982298, -0.0668766)));
 	targets.push_back(std::tuple<Vector3,Quaternion>(Vector3(-29.6198, 17.7426, 90.7622)	,Quaternion(-0.119085, 0.160843, 0.919453, 0.338448)));
 	targets.push_back(std::tuple<Vector3,Quaternion>(Vector3(-25.3372, 2.28942, 75.3072)	,Quaternion(-0.463481, -0.118306, 0.875867, -0.0635474)));

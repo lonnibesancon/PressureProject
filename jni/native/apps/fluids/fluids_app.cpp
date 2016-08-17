@@ -302,6 +302,9 @@ struct FluidMechanics::Impl
 	void timer();
 	void initJNI();
 	bool isOver = true ;
+	Participant participant ;
+	int logNumber = 0 ;
+	std::string directory ;
 
 
 };
@@ -321,7 +324,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	axisCube.reset(new Cube(true));
 	particleSphere = LoaderOBJ::load(baseDir + "/sphere.obj");
 	cylinder = LoaderOBJ::load(baseDir + "/cylinder.obj");
-	bunny = LoaderOBJ::load(baseDir +"/bunnywire.obj");
+	bunny = LoaderOBJ::load(baseDir +"/bunny.obj");
 	lines.reset(new Lines);
 
 
@@ -335,6 +338,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 
 	
 	targetId = 0 ;
+	directory = baseDir +"/";
 }
 
 void FluidMechanics::Impl::initJNI(){
@@ -343,6 +347,7 @@ void FluidMechanics::Impl::initJNI(){
 
 void FluidMechanics::Impl::launchTrial(){
 	LOGD("LaunchTrial");
+	participant.setValues(settings->pID,directory);
 	isOver = false ;
 	interactionMode = dataTangible ;
 	std::thread timerTrial(&FluidMechanics::Impl::endTrial,this);
@@ -365,19 +370,24 @@ void FluidMechanics::Impl::timer(){
 }
 
 void FluidMechanics::Impl::endTrial(){
-	printAny(isOver,"COUCOU");
 	usleep(TIME);
-	LOGD("TIMER ENDS");
+	LOGD("Trial End");
 	isOver = true ;
 	interactionMode = 0 ; 
+	settings->controlType = participant.getCondition();
+	reset();
+	participant.resetTrial();
+
 	//Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
 	return ;
 }
 
 void FluidMechanics::Impl::log(){
 	while(isOver == false){
-		usleep(25);
-		LOGD("TIMER LOG");	
+		usleep(TIMELOG);
+		LOGD("Second timer for collecting data");	
+		participant.addData(currentDataPos, currentDataRot, settings->precision, logNumber);
+		logNumber++ ;
 	}
 	return ;
 
@@ -398,7 +408,7 @@ void FluidMechanics::Impl::reset(){
 	centerPos = currentDataPos ;
 	centerRot = currentDataRot ;
 	directionMov = Vector3::zero();
-
+	logNumber = 0 ;
 
 	setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400)),Matrix4::makeTransform(Vector3(0, 0, 400)));
 	
