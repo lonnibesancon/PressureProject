@@ -31,6 +31,7 @@ Participant::Participant(int p, std::string path){
 	currentConditionID = 0 ;
 	currentTargetID = 0 ;
 	logWritten = false ;
+	shouldLog = false ;
 }
 
 Participant::Participant(){
@@ -39,6 +40,7 @@ Participant::Participant(){
 	currentConditionID = 0 ;
 	currentTargetID = 0 ;
 	logWritten = false ;
+	shouldLog = false ;
 }
 
 void Participant::setValues(int p, std::string path){
@@ -48,6 +50,11 @@ void Participant::setValues(int p, std::string path){
 	logWritten = false ;
 	getPermutationCondition();
 	getPermutationTrials();
+	shouldLog = false ;
+}
+
+void Participant::logging(bool b){
+	shouldLog = b ;
 }
 
 void Participant::getPermutationCondition(){
@@ -212,11 +219,8 @@ bool Participant::hasFinishedLog(){
 
 void Participant::resetTrial(){
 	//First we need to log everything
+	shouldLog = false ;
 	performLog();
-	logPositions.clear();
-	precision.clear();
-	timestamps.clear();
-	logDiffValues.clear();
 	currentTargetID ++ ;
 	LOGD("LOGWRITING has been done and currentTargetID has been increased and equals %d", currentTargetID);
 	if(currentTargetID%15 == 0){
@@ -226,6 +230,13 @@ void Participant::resetTrial(){
 	logWritten = true ;
 	
 }
+
+void Participant::clearVectors(){
+	logPositions.clear();
+	precision.clear();
+	timestamps.clear();
+	logDiffValues.clear();
+}
 void Participant::resetCondition(){
 	currentTargetID = 0 ;
 	currentConditionID ++ ;
@@ -234,16 +245,20 @@ void Participant::resetCondition(){
 
 }
 void Participant::addData(Vector3 currentPos, Quaternion currentRot, float prec, int timestamp){
-	logWritten = false ;
-	logPositions.push_back(std::tuple<Vector3,Quaternion>(currentPos, currentRot));
-	precision.push_back(prec);
-	timestamps.push_back(timestamp*TIMELOG);
-	
-	float eucli = euclideandist(currentPos,std::get<0>(targets[currentConditionID]));
-	Quaternion directionRot = currentRot * std::get<1>(targets[currentConditionID]).inverse();
-	float angular = 2 * safe_acos(directionRot.w);
+	if(shouldLog){
+		logWritten = false ;
 
-	logDiffValues.push_back(std::tuple<float,float>(eucli,angular));
+		logPositions.push_back(std::tuple<Vector3,Quaternion>(currentPos, currentRot));
+		precision.push_back(prec);
+		timestamps.push_back(timestamp*TIMELOG);
+		
+		float eucli = euclideandist(currentPos,std::get<0>(targets[currentConditionID]));
+		Quaternion directionRot = currentRot * std::get<1>(targets[currentConditionID]).inverse();
+		float angular = 2 * safe_acos(directionRot.w);
+
+		logDiffValues.push_back(std::tuple<float,float>(eucli,angular));
+	}
+	
 }
 
 Matrix4 Participant::getTargetMatrix(){

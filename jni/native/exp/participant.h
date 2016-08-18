@@ -20,6 +20,8 @@ public:
 	void resetCondition();
 	int getCondition();
 	bool hasFinishedLog();
+	void logging(bool b);
+	void clearVectors();
 	Matrix4 getTargetMatrix();
 
 
@@ -30,6 +32,7 @@ private:
 	int currentTargetID ;
 	std::string filepath ;
 	bool logWritten ;
+	bool shouldLog ;
 
 	std::vector<int> conditions ;
 	std::vector<std::tuple<Vector3,Quaternion>> logPositions ;

@@ -1775,7 +1775,7 @@ public class MainActivity extends BaseARActivity
 
     private void getData(byte[] data) {
 
-        Log.d("ValueSlider","test");
+        Log.d("Bluetooth","test");
 
         if(fluidSettings.controlType == PRESSURE_CONTROL || fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
             value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
@@ -1799,7 +1799,7 @@ public class MainActivity extends BaseARActivity
 
             sliderPrecision.setMax( (max - min) / step );
             sliderPrecision.setProgress((int)(valueInt));
-            Log.d("ValueSlider","Value = "+value+"  Value Int = "+valueInt+"  Max - Value Int = "+(max-valueInt)+" Value  Slider = "+(max-valueInt));
+            Log.d("Bluetooth ValueSlider","Value = "+value+"  Value Int = "+valueInt+"  Max - Value Int = "+(max-valueInt)+" Value  Slider = "+(max-valueInt));
 
             final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
             sliderTooltipPrecision.setVisibility(View.INVISIBLE);

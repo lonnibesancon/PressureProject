@@ -360,6 +360,9 @@ void FluidMechanics::Impl::launchTrial(){
 	//participant.setValues(settings->pID,directory);
 	isOver = false ;
 	interactionMode = dataTangible ;
+	reset();
+	participant.clearVectors();
+	participant.logging(true);	
 	std::thread timerTrial(&FluidMechanics::Impl::endTrial,this);
 	timerTrial.detach();
 	std::thread timerLog(&FluidMechanics::Impl::log,this);
