@@ -59,5 +59,5 @@ public class FluidMechanics {
     public static native void setPId(int p);
     public static native void initJNI();
     public static native boolean hasFinishedLog();
-    public static native String getConditionName();
+    public static native int getCondition();
 }

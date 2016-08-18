@@ -354,7 +354,8 @@ public class MainActivity extends BaseARActivity
 
     public void alertBeforeNewTechnique(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-        String techniqueName = FluidMechanics.getConditionName();
+        fluidSettings.controlType = FluidMechanics.getCondition() ;
+        String techniqueName = getConditionName(fluidSettings.controlType);
         if(techniqueName.equals("Pressure Control")){
             Log.d("Bluetooth","started because new technique is pressure");
             connectBluetooth();
@@ -1426,6 +1427,10 @@ public class MainActivity extends BaseARActivity
         NativeApp.setSettings(settings);
     }
 
+    private void getSettings(){
+        NativeApp.getSettings(settings);
+    }
+
     private void updateDataSettings() {
         fluidSettings.sliceType =
             mStylusClippingMenuItem.isChecked() ? FluidMechanics.SLICE_STYLUS
@@ -1659,6 +1664,29 @@ public class MainActivity extends BaseARActivity
     }
 
 
+    public String getConditionName(int condID){
+        String techniqueName = "";
+        switch(condID){
+            case PRESSURE_CONTROL:
+                techniqueName = "Pressure Control";
+                break;
+            case PRESSURE_CONTROL_REVERSE:
+                techniqueName = "Reverse Pressure Control";
+                break ;
+            case SPEED_CONTROL:
+                techniqueName = "Speed control";
+                break;
+            case RATE_CONTROL:
+                techniqueName = "Rate Control";
+                break ;
+            case SLIDER_CONTROL:
+                techniqueName = "Slider Control";
+                break ;
+        }
+        return techniqueName ;
+    }
+
+
 
 
 
@@ -1796,6 +1824,7 @@ public class MainActivity extends BaseARActivity
 
         Log.d("Bluetooth","test");
 
+        Log.d("Bluetooth", "Control Type = "+fluidSettings.controlType);
         if(fluidSettings.controlType == PRESSURE_CONTROL || fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
             value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
             if(value < MINPRESSURE)     value = MINPRESSURE ;

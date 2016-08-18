@@ -90,7 +90,7 @@ extern "C" {
     JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isTrialOver(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_setPId(JNIEnv* env, jobject obj, jint p);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_hasFinishedLog(JNIEnv* env, jobject obj);
-    JNIEXPORT jstring JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getConditionName(JNIEnv* env, jobject obj);
+    JNIEXPORT int JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getCondition(JNIEnv* env, jobject obj);
     //Initialize everything to call a java function
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
@@ -189,7 +189,7 @@ struct FluidMechanics::Impl
 	void computeEucli();
 	void setPId(int p);
 	bool hasFinishedLog();
-	std::string getConditionName();
+	int getCondition();
 
 
 
@@ -419,8 +419,8 @@ void FluidMechanics::Impl::setPId(int p){
 	participant.setValues(p,directory);
 }
 
-std::string FluidMechanics::Impl::getConditionName(){
-	std::string techniqueName ;
+int FluidMechanics::Impl::getCondition(){
+	/*std::string techniqueName ;
 	LOGD("TECHNIQUENAME %d",settings->controlType);
 	LOGD("TECHNIQUENAME Participant %d",participant.getCondition());
 	switch(participant.getCondition()){
@@ -440,7 +440,8 @@ std::string FluidMechanics::Impl::getConditionName(){
             techniqueName = "Slider Control";
             break ;
     }
-	return techniqueName;
+	return techniqueName;*/
+	return participant.getCondition();
 }
 
 
@@ -2159,7 +2160,7 @@ JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* en,
 	}
 }
 
-JNIEXPORT jstring JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getConditionName(JNIEnv* env, jobject obj){
+JNIEXPORT jint JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getCondition(JNIEnv* env, jobject obj){
 	try {
 		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
 
@@ -2171,7 +2172,7 @@ JNIEXPORT jstring JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getConditionName
 
 		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
 		android_assert(instance);
-		return (env->NewStringUTF(instance->getConditionName().c_str())) ;
+		return instance->getCondition() ;
 
 
 	} catch (const std::exception& e) {
@@ -2346,8 +2347,8 @@ bool FluidMechanics::hasFinishedLog(){
 	impl->hasFinishedLog();
 }
 
-std::string FluidMechanics::getConditionName(){
-	return impl->getConditionName();
+int FluidMechanics::getCondition(){
+	return impl->getCondition();
 }
 /*
 void FluidMechanics::initJNI(){
