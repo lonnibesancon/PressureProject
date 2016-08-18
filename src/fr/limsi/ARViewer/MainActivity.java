@@ -232,7 +232,7 @@ public class MainActivity extends BaseARActivity
     private LinearLayout dataLayout;
 
     private float value ;
-    private short trialNumber = 1 ;
+    private short trialNumber = 0 ;
     private boolean trialFinished = false ;
     private boolean mAlertVisible = false ;
     private boolean idRegistered = false ;
@@ -322,7 +322,10 @@ public class MainActivity extends BaseARActivity
 
     public void showAlerts(){
         //When it's done
-        if(trialNumber == 4 * NBTRIALS){
+        if(TRAINING && (trialNumber==3 || trialNumber==21 || trialNumber==39 || trialNumber==54) ){
+
+        }
+        if( (TRAINING && trialNumber == 4 * (NBTRIALS+3)) || (!TRAINING && trialNumber == 4*NBTRIALS) ){
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Thanks for your participation");
             alert.setMessage("Thanks a lot for participating in the study!!!!");
@@ -339,7 +342,7 @@ public class MainActivity extends BaseARActivity
         }
 
         //We need to show that they're gonna use a new technique
-        if(trialNumber != 0 && trialNumber%15 == 0){
+        if((TRAINING && trialNumber%18 == 0) || (!TRAINING && trialNumber%15 == 0) ){
             alertBeforeNewTechnique();
         }
         else{
@@ -350,8 +353,9 @@ public class MainActivity extends BaseARActivity
 
     public void alertBeforeNewTechnique(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-        alert.setTitle("----Next Technique----");
-        alert.setMessage("You are now done with the current technique, it's time to evaluate it! \nYou will now try an other technique. Touch ok when you're ready");
+        String techniqueName = FluidMechanics.getConditionName();
+        alert.setTitle("Next technique: "+techniqueName);
+        alert.setMessage("You are now done with the current technique, it's time to evaluate it! \nYou will now try an other technique. Touch ok when you're ready\n");
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface dialog, int whichButton) {

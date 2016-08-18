@@ -90,6 +90,7 @@ extern "C" {
     JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isTrialOver(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_setPId(JNIEnv* env, jobject obj, jint p);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_hasFinishedLog(JNIEnv* env, jobject obj);
+    JNIEXPORT jstring JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getConditionName(JNIEnv* env, jobject obj);
     //Initialize everything to call a java function
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
@@ -188,6 +189,7 @@ struct FluidMechanics::Impl
 	void computeEucli();
 	void setPId(int p);
 	bool hasFinishedLog();
+	std::string getConditionName();
 
 
 
@@ -409,6 +411,30 @@ void FluidMechanics::Impl::log(){
 
 void FluidMechanics::Impl::setPId(int p){
 	participant.setValues(p,directory);
+}
+
+std::string FluidMechanics::Impl::getConditionName(){
+	std::string techniqueName ;
+	LOGD("TECHNIQUENAME %d",settings->controlType);
+	LOGD("TECHNIQUENAME Participant %d",participant.getCondition());
+	switch(participant.getCondition()){
+        case PRESSURE_CONTROL:
+            techniqueName = "Pressure Control";
+            break;
+        case PRESSURE_CONTROL_REVERSE:
+            techniqueName = "Reverse Pressure Control";
+            break ;
+        case SPEED_CONTROL:
+            techniqueName = "Speed control";
+            break;
+        case RATE_CONTROL:
+            techniqueName = "Rate Control";
+            break ;
+        case SLIDER_CONTROL:
+            techniqueName = "Slider Control";
+            break ;
+    }
+	return techniqueName;
 }
 
 
@@ -986,17 +1012,20 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 			trans.y *= settings->considerY ;//* settings->considerTranslation ;
 			trans.z *= settings->considerZ ; //* settings->considerTranslation ;
 
-			if(settings->controlType == SPEED_CONTROL){
+			//if(settings->controlType == SPEED_CONTROL){
+			if(participant.getCondition() == SPEED_CONTROL){
 				computeEucli();
 				trans*=eucli ;
 				currentDataPos +=trans ;
 			}
-			if(settings->controlType == RATE_CONTROL_SIMPLE){
+			//if(settings->controlType == RATE_CONTROL_SIMPLE){
+			if(participant.getCondition() == RATE_CONTROL_SIMPLE){
 				tabPos+=trans ;
 				Vector3 coordinateCorrection(1,-1,-1);
 				currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.05) + currentDataPos ;
 			}
-			if(settings->controlType == RATE_CONTROL){
+			//if(settings->controlType == RATE_CONTROL){
+			if(participant.getCondition() == RATE_CONTROL){
 				tabPos+=trans ;
 				Vector3 diff = tabPos-centerPos ;
 				diff.x = abs(diff.x);
@@ -1047,8 +1076,9 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 
-
-			if(settings->controlType == RATE_CONTROL_SIMPLE ){
+			
+			//if(settings->controlType == RATE_CONTROL_SIMPLE ){
+			if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
 				tabRot = rot ;//* tabRot ;
 				currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
 			}
@@ -1076,7 +1106,9 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 void FluidMechanics::Impl::computeAngular(){
 	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
 
-	if(settings->controlType == SPEED_CONTROL ){
+
+	//if(settings->controlType == SPEED_CONTROL ){
+	if(participant.getCondition() == SPEED_CONTROL ){
 		directionRot = currentDataRot * previousRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 		
@@ -1092,7 +1124,8 @@ void FluidMechanics::Impl::computeAngular(){
 		previousRot = currentDataRot ;
 	}
 
-	else if(settings->controlType == RATE_CONTROL ){
+	//else if(settings->controlType == RATE_CONTROL ){
+	else if(participant.getCondition() == RATE_CONTROL ){
 		directionRot = currentDataRot * centerRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 		
@@ -1108,7 +1141,8 @@ void FluidMechanics::Impl::computeAngular(){
 		previousRot = currentDataRot ;
 	}
 
-	else if(settings->controlType == RATE_CONTROL_SIMPLE){
+	//else if(settings->controlType == RATE_CONTROL_SIMPLE){
+	else if(participant.getCondition() == RATE_CONTROL_SIMPLE){
 		directionRot = tabRot * centerRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 		
@@ -1141,7 +1175,9 @@ void FluidMechanics::Impl::computeAngular(){
 }
 
 void FluidMechanics::Impl::computeEucli(){
-	if(settings->controlType == SPEED_CONTROL){
+
+	//if(settings->controlType == SPEED_CONTROL){
+	if(participant.getCondition() == SPEED_CONTROL){
 		float tmp = euclideandist(currentDataPos, previousPos);
 		if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
 		if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
@@ -1154,7 +1190,8 @@ void FluidMechanics::Impl::computeEucli(){
 		//Will only be used if the control mode is Speed
 		previousPos = currentDataPos ;
 	}
-	else if(settings->controlType == RATE_CONTROL_SIMPLE){
+	//else if(settings->controlType == RATE_CONTROL_SIMPLE){
+	else if(participant.getCondition() == RATE_CONTROL_SIMPLE){
 		float tmp = euclideandist(currentDataPos, centerPos);
 		if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
 		if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
@@ -2107,6 +2144,26 @@ JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* en,
 	}
 }
 
+JNIEXPORT jstring JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getConditionName(JNIEnv* env, jobject obj){
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		return (env->NewStringUTF(instance->getConditionName().c_str())) ;
+
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+}
+
 JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava(){
 	/*jobject javaObjectRef = env->NewObject(javaClassRef, javaMethodRef);
 	env->CallVoidMethod(javaObjectRef, javaMethodRef);*/
@@ -2272,6 +2329,10 @@ void FluidMechanics::setPId(int p){
 
 bool FluidMechanics::hasFinishedLog(){
 	impl->hasFinishedLog();
+}
+
+std::string FluidMechanics::getConditionName(){
+	return impl->getConditionName();
 }
 /*
 void FluidMechanics::initJNI(){

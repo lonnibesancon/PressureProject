@@ -30,6 +30,7 @@ public:
 	bool isTrialOver();
 	void setPId(int p);
 	bool hasFinishedLog();
+	std::string getConditionName();
 
     std::string getData();
 

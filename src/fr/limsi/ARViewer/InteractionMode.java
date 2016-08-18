@@ -50,6 +50,8 @@ public interface InteractionMode{
 
 	public static final int NBTRIALS	= 15 ;
 
+	public static final boolean TRAINING = false ;
+
 	//LOGGING HELP
 
 
