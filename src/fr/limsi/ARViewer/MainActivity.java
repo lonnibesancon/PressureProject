@@ -277,6 +277,7 @@ public class MainActivity extends BaseARActivity
                     pId = p ;
                     fluidSettings.pID = p ;
                     updateSettings();
+                    FluidMechanics.setPId(p);
                     openFile();
                     idRegistered = true ;
                     showAlerts();
@@ -321,7 +322,7 @@ public class MainActivity extends BaseARActivity
 
     public void showAlerts(){
         //When it's done
-        if(trialNumber == 45){
+        if(trialNumber == 4 * NBTRIALS){
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Thanks for your participation");
             alert.setMessage("Thanks a lot for participating in the study!!!!");
@@ -361,6 +362,7 @@ public class MainActivity extends BaseARActivity
         });
         AlertDialog alertdialog = alert.create();
         alertdialog.show();
+        alertdialog.setCancelable(false);
         //alert.show();
     }
 
@@ -396,7 +398,7 @@ public class MainActivity extends BaseARActivity
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface dialog, int whichButton) {
-            launchTrial();
+        launchTrial();
             mAlertVisible = false ; // So that we'll display the next alert when the trial is Over
             return ;   
           
@@ -404,6 +406,13 @@ public class MainActivity extends BaseARActivity
         });
         AlertDialog alertdialog = alert.create();
         alertdialog.show();
+        alertdialog.setCancelable(false);
+        /*try{
+            Thread.sleep(1000); // A little pause for the logging to be saved
+        }
+        catch(InterruptedException e){
+            Log.d("Error on sleep","Error while puttin the UI thread to sleep waiting for the logging");
+        }*/
         //alert.show();
         
     }
@@ -1570,14 +1579,13 @@ public class MainActivity extends BaseARActivity
             }
 
             this.isInteracting = true ;
-            requestRender();
             Log.d(TAG,"NB OF FINGERS = "+this.nbOfFingers);
             Log.d(TAG,"Nb of fingers button = "+this.nbOfFingersButton);
             // NativeApp.setZoom(mZoomFactor);
 
         }
 
-
+        requestRender();
         setStateOverlay();
         return true;
     }
@@ -1594,14 +1602,20 @@ public class MainActivity extends BaseARActivity
                 //The last one is here to prevent the dialogs from showing up first
                 
                 mAlertVisible = true;
+                /*while(FluidMechanics.hasFinishedLog() == false ){
+                            try{
+                                Thread.sleep(100); 
+                                Log.d("LOG","Waiting");
+                            }
+                            catch(InterruptedException e){
+                                Log.d("Error on sleep","Error while puttin the UI thread to sleep waiting for the logging");
+                            }
+                            //alert.show()
+
+                }*/
                 mHandler.post(new Runnable() {
                     public void run(){
-                        try{
-                            Thread.sleep(1000); // A little pause for the logging to be saved
-                        }
-                        catch(InterruptedException e){
-                            Log.d("Error on sleep","Error while puttin the UI thread to sleep waiting for the logging");
-                        }
+                        
                         Log.d("Runnable","Show Alert");
                         showAlerts();
                         Log.d("Runnable","End Show Alert");

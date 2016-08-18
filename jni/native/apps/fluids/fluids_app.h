@@ -28,6 +28,8 @@ public:
 	void resetParticles();
 	void launchTrial();
 	bool isTrialOver();
+	void setPId(int p);
+	bool hasFinishedLog();
 
     std::string getData();
 

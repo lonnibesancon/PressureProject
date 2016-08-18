@@ -56,5 +56,7 @@ public class FluidMechanics {
     public static native boolean isTrialOver();
     public static native void resetParticles();
     public static native void getState(FluidMechanics.State state);
+    public static native void setPId(int p);
     public static native void initJNI();
+    public static native boolean hasFinishedLog();
 }

@@ -88,9 +88,12 @@ extern "C" {
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_reset(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_launchTrial(JNIEnv* env, jobject obj);
     JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isTrialOver(JNIEnv* env, jobject obj);
+    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_setPId(JNIEnv* env, jobject obj, jint p);
+    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_hasFinishedLog(JNIEnv* env, jobject obj);
     //Initialize everything to call a java function
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
+
 }
 
 // (end of JNI interface)
@@ -183,6 +186,8 @@ struct FluidMechanics::Impl
 	float convertIntoNewRange(float oldRangeMin, float oldRangeMax, float value);
 	void computeAngular();
 	void computeEucli();
+	void setPId(int p);
+	bool hasFinishedLog();
 
 
 
@@ -346,8 +351,8 @@ void FluidMechanics::Impl::initJNI(){
 }
 
 void FluidMechanics::Impl::launchTrial(){
-	LOGD("LaunchTrial with pID value = %d", settings->pID);
-	participant.setValues(settings->pID,directory);
+	//LOGD("LaunchTrial with pID value = %d", settings->pID);
+	//participant.setValues(settings->pID,directory);
 	isOver = false ;
 	interactionMode = dataTangible ;
 	std::thread timerTrial(&FluidMechanics::Impl::endTrial,this);
@@ -362,7 +367,13 @@ bool FluidMechanics::Impl::isTrialOver(){
 	//TOFIX
 	//endTrial();
 	printAny(isOver,"TrialOver");
-	return isOver ;
+	
+	return isOver;
+}
+
+bool FluidMechanics::Impl::hasFinishedLog(){
+	printAny(participant.hasFinishedLog(), "TrialOver Log done");
+	return participant.hasFinishedLog() ;
 }
 
 void FluidMechanics::Impl::timer(){
@@ -372,13 +383,15 @@ void FluidMechanics::Impl::timer(){
 void FluidMechanics::Impl::endTrial(){
 	usleep(TIME);
 	LOGD("Trial End");
-	isOver = true ;
-	interactionMode = 0 ; 
+	
 	reset();
+	//std::thread pLog(&Participant::resetTrial,participant);
+	//pLog.join();
 	participant.resetTrial();
 	settings->controlType = participant.getCondition();
+	isOver = true ;
+	interactionMode = 0 ; 
 	
-
 	//Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
 	return ;
 }
@@ -392,6 +405,10 @@ void FluidMechanics::Impl::log(){
 	}
 	return ;
 
+}
+
+void FluidMechanics::Impl::setPId(int p){
+	participant.setValues(p,directory);
 }
 
 
@@ -2024,6 +2041,25 @@ JNIEXPORT jboolean JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isTrialOver(JNI
 	}
 }
 
+JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_setPId(JNIEnv* env, jobject obj, int id){
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		instance->setPId(id);
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+}
+
 JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* en, jobject ob)
 {
 	try {
@@ -2110,6 +2146,26 @@ JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava(){
     // this line makes not much sense. I think you don't need it if you use the global
     // with the global it would be more like this
     //env->CallVoidMethod(javaObjectRef, javaMethodRef);
+}
+
+JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_hasFinishedLog(JNIEnv* env, jobject obj){
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		instance->hasFinishedLog();
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+
 }
 
 
@@ -2208,6 +2264,14 @@ void FluidMechanics::launchTrial(){
 
 bool FluidMechanics::isTrialOver(){
 	return impl->isTrialOver();
+}
+
+void FluidMechanics::setPId(int p){
+	impl->setPId(p);
+}
+
+bool FluidMechanics::hasFinishedLog(){
+	impl->hasFinishedLog();
 }
 /*
 void FluidMechanics::initJNI(){

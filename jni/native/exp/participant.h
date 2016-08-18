@@ -19,6 +19,7 @@ public:
 	void resetTrial();
 	void resetCondition();
 	int getCondition();
+	bool hasFinishedLog();
 
 
 private:
@@ -27,6 +28,7 @@ private:
 	int pID ;
 	int currentTargetID ;
 	std::string filepath ;
+	bool logWritten ;
 
 	std::vector<int> conditions ;
 	std::vector<std::tuple<Vector3,Quaternion>> logPositions ;
@@ -36,13 +38,15 @@ private:
 	std::vector<float> precision ;
 
 
-	std::vector<std::tuple<Vector3,Quaternion>> targets ;
+	std::vector<std::tuple<Vector3,Quaternion,int>> targets ;
 
 
 	void getPermutationTrials();
 	void getPermutationCondition();
 	void generateAllTargets();
 	void performLog();
+
+	//void writeLog(std::string filepath);
 
 
 

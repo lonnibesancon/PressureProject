@@ -58,8 +58,10 @@
 
 
 #define NBTRIALS 15
-#define TIME	1000000
-#define TIMELOG 25
+//#define TIME	1000000
+#define TIME	15000000
+#define TIMELOG 	5000
+#define SLEEPTIME 2000000
 
 
 
