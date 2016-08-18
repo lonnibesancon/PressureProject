@@ -174,3 +174,51 @@ void Mesh::render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatri
 	if (mVertexColorAttrib != -1)
 		glDisableVertexAttribArray(mVertexColorAttrib);
 }
+
+// (GL context)
+void Mesh::renderTarget(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix)
+{
+	if (!mBound)
+		bind();
+
+	glUseProgram(mMaterial->getHandle());
+
+	// TODO: texcoords
+	// NOTE: after adding texcoords, change the stride and the
+	// starting indices accordingly
+
+	const unsigned int stride = (mVertexColorAttrib == -1 ? 6 : 9);
+
+	// Vertices
+	glVertexAttribPointer(mVertexAttrib, 3, GL_FLOAT, false, stride*sizeof(GLfloat), mMeshBuffer.data());
+	glEnableVertexAttribArray(mVertexAttrib);
+
+	// Normals
+	glVertexAttribPointer(mNormalAttrib, 3, GL_FLOAT, false, stride*sizeof(GLfloat), &mMeshBuffer[3]);
+	glEnableVertexAttribArray(mNormalAttrib);
+
+	if (mVertexColorAttrib != -1) {
+		// Vertex colors
+		glVertexAttribPointer(mVertexColorAttrib, 3, GL_FLOAT, false, stride*sizeof(GLfloat), &mMeshBuffer[6]);
+		glEnableVertexAttribArray(mVertexColorAttrib);
+	}
+
+	// Uniforms
+	glUniformMatrix4fv(mProjectionUniform, 1, false, projectionMatrix.data_);
+	glUniformMatrix4fv(mModelViewUniform, 1, false, modelViewMatrix.data_);
+	glUniformMatrix3fv(mNormalMatrixUniform, 1, false, modelViewMatrix.inverse().transpose().get3x3Matrix().data_);
+	glUniform4f(mColorUniform, 0.1, 1, 0.1, 0.7);
+
+	// Rendering
+	glDrawArrays(GL_TRIANGLES, 0, mNumFaces);
+
+	glDisableVertexAttribArray(mVertexAttrib);
+	// TODO: texcoords
+	glDisableVertexAttribArray(mNormalAttrib);
+
+	if (mVertexColorAttrib != -1)
+		glDisableVertexAttribArray(mVertexColorAttrib);
+}
+
+
+

@@ -279,6 +279,7 @@ struct FluidMechanics::Impl
 
 	MeshPtr particleSphere, cylinder;
 	MeshPtr bunny ;
+	MeshPtr bunnytarget;
 	LinesPtr lines;
 
 
@@ -312,6 +313,7 @@ struct FluidMechanics::Impl
 	Participant participant ;
 	int logNumber = 0 ;
 	std::string directory ;
+	Matrix4 tm ;
 
 
 };
@@ -332,6 +334,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	particleSphere = LoaderOBJ::load(baseDir + "/sphere.obj");
 	cylinder = LoaderOBJ::load(baseDir + "/cylinder.obj");
 	bunny = LoaderOBJ::load(baseDir +"/bunny.obj");
+	bunnytarget = LoaderOBJ::load(baseDir+"/bunny.obj");
 	lines.reset(new Lines);
 
 
@@ -1590,6 +1593,7 @@ void FluidMechanics::Impl::renderObjects()
 
 	if (state->tangibleVisible) {
 		Matrix4 mm;
+		Matrix4 tm = participant.getTargetMatrix();
 		synchronized(state->modelMatrix) {
 			mm = state->modelMatrix;
 		}
@@ -1600,6 +1604,13 @@ void FluidMechanics::Impl::renderObjects()
 			Quaternion::identity(),
 			Vector3(settings->zoomFactor)
 		);
+		tm = tm * Matrix4::makeTransform(
+			Vector3::zero(),
+			Quaternion::identity(),
+			Vector3(settings->zoomFactor)
+		);
+
+
 
 
 #ifdef VTK
@@ -1668,6 +1679,7 @@ void FluidMechanics::Impl::renderObjects()
 				// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
 				glDisable(GL_CULL_FACE);
 				bunny->render(proj, mm);
+				bunnytarget->renderTarget(proj,tm);
 			}
 		}
 

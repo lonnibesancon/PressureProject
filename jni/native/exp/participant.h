@@ -20,6 +20,7 @@ public:
 	void resetCondition();
 	int getCondition();
 	bool hasFinishedLog();
+	Matrix4 getTargetMatrix();
 
 
 private:

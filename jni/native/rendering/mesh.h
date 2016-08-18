@@ -33,6 +33,7 @@ public:
 
 	// (GL context)
 	void render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix);
+	void renderTarget(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix);
 
 private:
 	MaterialSharedPtr mMaterial;

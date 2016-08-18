@@ -246,6 +246,10 @@ void Participant::addData(Vector3 currentPos, Quaternion currentRot, float prec,
 	logDiffValues.push_back(std::tuple<float,float>(eucli,angular));
 }
 
+Matrix4 Participant::getTargetMatrix(){
+	return Matrix4::makeTransform(std::get<0>(targets[currentTargetID]), std::get<1>(targets[currentTargetID]));
+}
+
 void Participant::generateAllTargets(){
 	targets.clear(); 	//Just to make sure that if called twice it won't mess up the target generation
 	targets.push_back(std::tuple<Vector3,Quaternion,int>(Vector3(34.4052, 20.5995, 110.312)		,Quaternion(0.17284, -0.027112, 0.982298, -0.0668766)	,1));
