@@ -211,6 +211,7 @@ public class MainActivity extends BaseARActivity
 
     private boolean scanStarted;
     private boolean scanning;
+    private boolean bluestarted = false ;
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothDevice bluetoothDevice;
@@ -354,6 +355,18 @@ public class MainActivity extends BaseARActivity
     public void alertBeforeNewTechnique(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         String techniqueName = FluidMechanics.getConditionName();
+        if(techniqueName.equals("Pressure Control")){
+            Log.d("Bluetooth","started because new technique is pressure");
+            connectBluetooth();
+            bluestarted = true ;
+        }
+        else{
+            if(bluestarted){
+                Log.d("Bluetooth","stopped cause new technique is different");
+                disconnectBluetooth(); 
+                bluestarted = false ;   
+            }
+        }
         alert.setTitle("Next technique: "+techniqueName);
         alert.setMessage("You are now done with the current technique, it's time to evaluate it! \nYou will now try an other technique. Touch ok when you're ready\n");
 
@@ -394,6 +407,8 @@ public class MainActivity extends BaseARActivity
         }
         
     }
+
+
 
     public void alertBeforeTrial(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
@@ -566,14 +581,14 @@ public class MainActivity extends BaseARActivity
 
 
         //BLE
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        /*bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         scanStarted = true;
         bluetoothAdapter.startLeScan(new UUID[]{ RFduinoService.UUID_SERVICE },MainActivity.this);
         //Intent rfduinoIntent = new Intent(MainActivity.this, RFduinoService.class);
         //bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
         //launchBluetooth();
         //scanBluetooth();
-        setStateOverlay();
+        setStateOverlay();*/
         FluidMechanics.initJNI();
 
     }
@@ -796,12 +811,12 @@ public class MainActivity extends BaseARActivity
     protected void onStart() {
         super.onStart();
 
-        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
+        /*registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
         registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
 
         updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
-        setStateOverlay();
+        setStateOverlay();*/
         //onStartBluetooth();
     }
 
@@ -1669,8 +1684,8 @@ public class MainActivity extends BaseARActivity
     }
 
     private final void connectBluetooth(){
-        onStartBluetooth();
         launchBluetooth();
+        onStartBluetooth();
         scanBluetooth();
         Intent rfduinoIntent = new Intent(MainActivity.this, RFduinoService.class);
         bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
@@ -1691,7 +1706,7 @@ public class MainActivity extends BaseARActivity
     }
 
     protected void onStopBluetooth() {
-        if(!this.areReceiverUnregistered){
+        if(!this.areReceiverUnregistered && bluestarted){
             bluetoothAdapter.stopLeScan(this);
 
             unregisterReceiver(scanModeReceiver);
@@ -1744,12 +1759,16 @@ public class MainActivity extends BaseARActivity
     private final BroadcastReceiver rfduinoReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d("Bluetooth", "on Receive");
             final String action = intent.getAction();
             if (RFduinoService.ACTION_CONNECTED.equals(action)) {
+                Log.d("Bluetooth", "Action connected");
                 upgradeState(STATE_CONNECTED);
             } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
+                Log.d("Bluetooth", "Action disconnected");
                 downgradeState(STATE_DISCONNECTED);
             } else if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
+                Log.d("Bluetooth", "Action data available");
                 getData(intent.getByteArrayExtra(RFduinoService.EXTRA_DATA));
             }
         }
