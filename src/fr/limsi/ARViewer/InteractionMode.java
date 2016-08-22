@@ -45,8 +45,8 @@ public interface InteractionMode{
 	public static final float MAXPRECISION	= 3.0f ;	// FIXME, BUG IF 3
 	public static final float MINPRECISION 	= 0.5f;
 
-	public static final float MAXPRESSURE 	= 3 ;
-	public static final float MINPRESSURE	= 0.5f ;
+	public static final float MAXPRESSURE 	= 2 ;
+	public static final float MINPRESSURE	= 0.01f ;
 
 	public static final int NBTRIALS	= 15 ;
 

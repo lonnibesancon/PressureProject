@@ -1835,6 +1835,10 @@ public class MainActivity extends BaseARActivity
 
             value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
 
+            float tmp = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,2);
+
+            Log.d("TESTPRESS","Tmp value = "+tmp+" value = "+value);
+
             //Have to use int
             final int step = 1;
             final int max = (int)MAXPRECISION * 100;
@@ -1846,14 +1850,15 @@ public class MainActivity extends BaseARActivity
             final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
 
             sliderPrecision.setMax( (max - min) / step );
-            sliderPrecision.setProgress((int)(valueInt));
-            Log.d("Bluetooth ValueSlider","Value = "+value+"  Value Int = "+valueInt+"  Max - Value Int = "+(max-valueInt)+" Value  Slider = "+(max-valueInt));
+            sliderPrecision.setProgress(valueInt);
+            sliderPrecision.setMax( (max - min) / step );
+            Log.d("Bluetooth ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" ;;;; Max - Min = "+(max-min)+" ;;;;;Value  Slider = "+(max-valueInt));
 
             final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
             sliderTooltipPrecision.setVisibility(View.INVISIBLE);
             sliderTooltipPrecision.setText(""+value);
 
-            fluidSettings.precision = value ;
+            fluidSettings.precision = value;
             updateDataSettings();
 
         }
@@ -1881,6 +1886,7 @@ public class MainActivity extends BaseARActivity
         }
         bluetoothOverlay.setText(connectionText);
     }
+
 
 
 }

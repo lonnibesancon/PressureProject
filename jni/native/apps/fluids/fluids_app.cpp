@@ -409,6 +409,7 @@ void FluidMechanics::Impl::log(){
 		usleep(TIMELOG);
 		LOGD("Second timer for collecting data");	
 		participant.addData(currentDataPos, currentDataRot, settings->precision, logNumber);
+		printAny(settings->precision, "TESTPRESS");
 		logNumber++ ;
 	}
 	return ;
