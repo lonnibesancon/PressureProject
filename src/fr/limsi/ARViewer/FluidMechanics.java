@@ -24,6 +24,7 @@ public class FluidMechanics {
         int dataORplane ;
         int controlType ;
         int pID ;
+        boolean isTraining ;
     }
 
     static class State {

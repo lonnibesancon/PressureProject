@@ -9,7 +9,7 @@ bool sensorHGActivated = false ;
 bool useTwoSensors = true ;
 float valueMax = 700 ;
 
-int threshold = 30 ;
+int threshold = 15 ;
 
 float toSend = 0;
 
@@ -49,8 +49,8 @@ void setup() {
 void loop() {
   toSend = 0.0 ;
   // Échantillonnage de l'émission en ms
-  //RFduino_ULPDelay(0.1);
-  RFduino_ULPDelay(1000);
+  RFduino_ULPDelay(0.1);
+  //RFduino_ULPDelay(1000);
   
   int sensorValueDroit = analogRead(SFR_DROIT);
   int sensorValueGauche = analogRead(SFR_GAUCHE);
@@ -79,9 +79,16 @@ void loop() {
     //RFduinoBLE.sendFloat(1.111000);
     RFduinoBLE.sendFloat(toSend);
   }
+  else{
+    toSend = -1.0 ;
+    RFduinoBLE.sendFloat(toSend); 
+    Serial.print("Value sent = ");
+    Serial.println(toSend);
+    
+  }
 
   sensorHGActivated = false ;
-  sensorHGActivated = false ;
+  sensorHDActivated = false ;
   
   
   //float voltage = sensorValue * (3.3 / 1023.0);

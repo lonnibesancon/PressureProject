@@ -314,6 +314,7 @@ struct FluidMechanics::Impl
 	int logNumber = 0 ;
 	std::string directory ;
 	Matrix4 tm ;
+	Matrix4 targetMatrix = Matrix4::makeTransform(Vector3(34.4052, 20.5995, 100.312), Quaternion(0.17284, -0.127112, 0.982298, -0.0668766));
 
 
 };
@@ -356,7 +357,9 @@ void FluidMechanics::Impl::initJNI(){
 }
 
 void FluidMechanics::Impl::launchTrial(){
-	//LOGD("LaunchTrial with pID value = %d", settings->pID);
+	settings->isTraining = false ;
+	settings->precision = 1 ;
+	LOGD("LaunchTrial with pID value = %d", settings->pID);
 	//participant.setValues(settings->pID,directory);
 	isOver = false ;
 	interactionMode = dataTangible ;
@@ -1016,40 +1019,37 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		
 		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
 		{
-			trans.x *= settings->considerX ;//* settings->considerTranslation ;
-			trans.y *= settings->considerY ;//* settings->considerTranslation ;
-			trans.z *= settings->considerZ ; //* settings->considerTranslation ;
 
 			//if(settings->controlType == SPEED_CONTROL){
-			if(participant.getCondition() == SPEED_CONTROL){
-				computeEucli();
-				trans*=eucli ;
+			if(settings->isTraining == false){
+
+				if(participant.getCondition() == SPEED_CONTROL){
+					computeEucli();
+					trans*=eucli ;
+					currentDataPos +=trans ;
+				}
+				//if(settings->controlType == RATE_CONTROL_SIMPLE){
+				if(participant.getCondition() == RATE_CONTROL_SIMPLE){
+					tabPos+=trans ;
+					Vector3 coordinateCorrection(1,-1,-1);
+					currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.05) + currentDataPos ;
+				}
+				//if(settings->controlType == RATE_CONTROL){
+				if(participant.getCondition() == RATE_CONTROL){
+					tabPos+=trans ;
+					Vector3 diff = tabPos-centerPos ;
+					diff.x = abs(diff.x);
+					diff.y = abs(diff.y);
+					diff.z = abs(diff.z);
+					diff.x = convertIntoNewRange(0, 100, diff.x);
+					diff.y = convertIntoNewRange(0, 100, diff.y);
+					diff.z = convertIntoNewRange(0, 100, diff.z);
+					currentDataPos += trans * diff ;
+				}
+				else{
 				currentDataPos +=trans ;
+				}
 			}
-			//if(settings->controlType == RATE_CONTROL_SIMPLE){
-			if(participant.getCondition() == RATE_CONTROL_SIMPLE){
-				tabPos+=trans ;
-				Vector3 coordinateCorrection(1,-1,-1);
-				currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.05) + currentDataPos ;
-			}
-			//if(settings->controlType == RATE_CONTROL){
-			if(participant.getCondition() == RATE_CONTROL){
-				tabPos+=trans ;
-				Vector3 diff = tabPos-centerPos ;
-				diff.x = abs(diff.x);
-				diff.y = abs(diff.y);
-				diff.z = abs(diff.z);
-				diff.x = convertIntoNewRange(0, 100, diff.x);
-				diff.y = convertIntoNewRange(0, 100, diff.y);
-				diff.z = convertIntoNewRange(0, 100, diff.z);
-				currentDataPos += trans * diff ;
-			}
-			/*if(settings->controlType == RATE_CONTROL_SIMPLE){
-				Vector3 toAdd = directionMov * eucli ;
-				//currentDataPos += toAdd ;
-				printAny(toAdd,"DIRECTIONMOV" );
-				currentDataPos +=trans ;
-			}*/
 			else{
 				currentDataPos +=trans ;
 			}
@@ -1086,11 +1086,18 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 
 			
 			//if(settings->controlType == RATE_CONTROL_SIMPLE ){
-			if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
-				tabRot = rot ;//* tabRot ;
-				currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
-			}
 
+			if(settings->isTraining == false){
+
+				if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
+					tabRot = rot ;//* tabRot ;
+					currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+				}
+
+				else{
+					currentDataRot = rot;	
+				}
+			}
 			else{
 				currentDataRot = rot;	
 			}
@@ -1598,10 +1605,20 @@ void FluidMechanics::Impl::renderObjects()
 
 	if (state->tangibleVisible) {
 		Matrix4 mm;
-		Matrix4 tm = participant.getTargetMatrix();
-		synchronized(state->modelMatrix) {
-			mm = state->modelMatrix;
+		Matrix4 tm;
+		if(settings->isTraining == false){
+			tm= participant.getTargetMatrix();
+			synchronized(state->modelMatrix) {
+				mm = state->modelMatrix;
+			}
 		}
+		else{
+			tm= targetMatrix;
+			synchronized(state->modelMatrix) {
+				mm = state->modelMatrix;
+			}
+		}
+		
 
 		// Apply the zoom factor
 		mm = mm * Matrix4::makeTransform(
@@ -1684,6 +1701,7 @@ void FluidMechanics::Impl::renderObjects()
 				// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
 				glDisable(GL_CULL_FACE);
 				bunny->render(proj, mm);
+
 				bunnytarget->renderTarget(proj,tm);
 			}
 		}

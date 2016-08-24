@@ -250,6 +250,11 @@ public class MainActivity extends BaseARActivity
     final private static short SLIDER_CONTROL           = 4 ;
 
 
+    //Training part
+    private Button endTrainingBtn ;
+    
+    private Button resetBtn ;
+
     @Override
     protected int getAppType() {
         // return NativeApp.APP_TYPE_STUB;
@@ -323,10 +328,8 @@ public class MainActivity extends BaseARActivity
 
     public void showAlerts(){
         //When it's done
-        if(TRAINING && (trialNumber==3 || trialNumber==21 || trialNumber==39 || trialNumber==54) ){
 
-        }
-        if( (TRAINING && trialNumber == 4 * (NBTRIALS+3)) || (!TRAINING && trialNumber == 4*NBTRIALS) ){
+        if( trialNumber == 4*NBTRIALS ){
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Thanks for your participation");
             alert.setMessage("Thanks a lot for participating in the study!!!!");
@@ -343,7 +346,7 @@ public class MainActivity extends BaseARActivity
         }
 
         //We need to show that they're gonna use a new technique
-        if((TRAINING && trialNumber%18 == 0) || (!TRAINING && trialNumber%15 == 0) ){
+        if(trialNumber%NBTRIALS == 0 ){
             alertBeforeNewTechnique();
         }
         else{
@@ -356,7 +359,7 @@ public class MainActivity extends BaseARActivity
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         fluidSettings.controlType = FluidMechanics.getCondition() ;
         String techniqueName = getConditionName(fluidSettings.controlType);
-        if(techniqueName.equals("Pressure Control")){
+        /*if(techniqueName.equals("Pressure Control")){
             Log.d("Bluetooth","started because new technique is pressure");
             connectBluetooth();
             bluestarted = true ;
@@ -367,7 +370,7 @@ public class MainActivity extends BaseARActivity
                 disconnectBluetooth(); 
                 bluestarted = false ;   
             }
-        }
+        }*/
         alert.setTitle("Next technique: "+techniqueName);
         alert.setMessage("You are now done with the current technique, it's time to evaluate it! \nYou will now try an other technique. Touch ok when you're ready\n");
 
@@ -409,6 +412,33 @@ public class MainActivity extends BaseARActivity
         
     }
 
+    public void alertBeforeEndOfTraining(){
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+        alert.setTitle("Are you sure?");
+        alert.setMessage("Click ok if you're ready to start the experiment. Cancel otherwise");
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int whichButton) {
+            
+            fluidSettings.isTraining = false ;
+            updateSettings();
+            endTrainingBtn.setVisibility(View.GONE);
+            getStartInfo();
+            resetBtn.setVisibility(View.GONE);
+            return ;   
+          
+          }
+        });
+        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int which) {
+            return ;
+        } });
+
+        AlertDialog alertdialog = alert.create();
+        alertdialog.show();
+        alertdialog.setCancelable(false);
+    }
+
 
 
     public void alertBeforeTrial(){
@@ -448,13 +478,15 @@ public class MainActivity extends BaseARActivity
         if (!isInitialized()) // || !isCameraAvailable())
             return;
 
-        getStartInfo();
+        //Since the training is done first, we do not use that here but call it when training is done
+        //getStartInfo();
 
         FluidMechanics.getSettings(fluidSettings);
         FluidMechanics.getState(fluidState);
-        fluidSettings.precision = 1 ;
+        fluidSettings.precision = MAXPRECISION ;
         fluidSettings.translatePlane = false ;
         fluidSettings.controlType = RATE_CONTROL;
+        fluidSettings.isTraining = true ;
         //fluidSettings.dataORplane = 0 ; //Data 
 
         //this.client = new Client();
@@ -562,6 +594,26 @@ public class MainActivity extends BaseARActivity
             }
         });*/
 
+        resetBtn = (Button) findViewById(R.id.resetBtn);
+        this.resetBtn.setOnClickListener(new OnClickListener(){
+            @Override
+            public void onClick(View view){
+                Log.d("ResetBtn","ResetBtn clicked");
+                reset();
+            } 
+        });
+
+        endTrainingBtn = (Button) findViewById(R.id.endTrainingBtn);
+        this.endTrainingBtn.setOnClickListener(new OnClickListener(){
+            @Override
+            public void onClick(View view){
+                Log.d("End Training","End Training clicked");
+                alertBeforeEndOfTraining();
+            } 
+        });
+
+        
+
 
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
@@ -591,6 +643,7 @@ public class MainActivity extends BaseARActivity
         //scanBluetooth();
         setStateOverlay();*/
         FluidMechanics.initJNI();
+        connectBluetooth();
 
     }
 
@@ -748,9 +801,8 @@ public class MainActivity extends BaseARActivity
         }
         if(isTangiblePressed){
             this.isInteracting = true ;
-            requestRender();
         }
-        
+        //requestRender();
 
     }
 
@@ -833,6 +885,7 @@ public class MainActivity extends BaseARActivity
                            Toast.LENGTH_SHORT).show();
         }
         mSensorManager.unregisterListener(this);
+        disconnectBluetooth();
 
     }
 
@@ -863,6 +916,7 @@ public class MainActivity extends BaseARActivity
         mSensorManager.registerListener(this, mGyro, SensorManager.SENSOR_DELAY_UI);
         mSensorManager.registerListener(this, mRotation, SensorManager.SENSOR_DELAY_UI);
         setStateOverlay();
+        connectBluetooth();
 
     }
 
@@ -875,7 +929,7 @@ public class MainActivity extends BaseARActivity
 //        unregisterReceiver(scanModeReceiver);
 //        unregisterReceiver(bluetoothStateReceiver);
 //        unregisterReceiver(rfduinoReceiver);
-        onStopBluetooth();
+        disconnectBluetooth();
     }
 
    
@@ -1365,9 +1419,15 @@ public class MainActivity extends BaseARActivity
         //End
         dataORplaneTangible = true ; //Data
         dataORplaneTouch = true ;    //Data
-        fluidSettings.precision = 1 ;
 
         this.nbOfResets += 1 ;
+
+        if(this.nbOfResets%2 == 0){
+            fluidSettings.precision = MAXPRECISION ;    
+        }
+        else{
+            fluidSettings.precision = MINPRECISION ;
+        }
         updateDataSettings();
         requestRender();
 
@@ -1545,7 +1605,7 @@ public class MainActivity extends BaseARActivity
 
                     //Fix for the experiment
                     isTangiblePressed = true ;
-                    FluidMechanics.buttonPressed();
+                    //FluidMechanics.buttonPressed();
                     this.tangibleBtn.setPressed(true);
                     this.nbOfFingersButton+=1 ;
 
@@ -1572,7 +1632,7 @@ public class MainActivity extends BaseARActivity
                     //}
 
                     //Fix for the experiment
-                    FluidMechanics.buttonReleased();
+                    //FluidMechanics.buttonReleased();
                     isTangiblePressed = false ;
                     this.tangibleBtn.setPressed(false);
                     this.nbOfFingersButton-=1 ;
@@ -1609,7 +1669,7 @@ public class MainActivity extends BaseARActivity
 
         }
 
-        requestRender();
+        //requestRender();
         setStateOverlay();
         return true;
     }
@@ -1712,16 +1772,22 @@ public class MainActivity extends BaseARActivity
     }
 
     private final void connectBluetooth(){
-        launchBluetooth();
-        onStartBluetooth();
-        scanBluetooth();
-        Intent rfduinoIntent = new Intent(MainActivity.this, RFduinoService.class);
-        bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
+        if(!bluestarted){
+            launchBluetooth();
+            onStartBluetooth();
+            scanBluetooth();
+            Intent rfduinoIntent = new Intent(MainActivity.this, RFduinoService.class);
+            bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
+            bluestarted = true ;
+        }
+        
     }
 
     private final void disconnectBluetooth(){
-        onStopBluetooth();
-        bluetoothAdapter.stopLeScan(this);
+        if(bluestarted){
+            onStopBluetooth();
+            bluetoothAdapter.stopLeScan(this);
+        }
     }
 
     private final void onStartBluetooth(){
@@ -1825,43 +1891,59 @@ public class MainActivity extends BaseARActivity
         Log.d("Bluetooth","test");
 
         Log.d("Bluetooth", "Control Type = "+fluidSettings.controlType);
-        if(fluidSettings.controlType == PRESSURE_CONTROL || fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
+        //if(fluidSettings.controlType == PRESSURE_CONTROL || fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
             value = HexAsciiHelper.HexToFloat(HexAsciiHelper.bytesToHex(data));
-            if(value < MINPRESSURE)     value = MINPRESSURE ;
-            if(value > MAXPRESSURE)     value = MAXPRESSURE ;
-            if(fluidSettings.controlType == PRESSURE_CONTROL){
-                value = MAXPRESSURE - value ;
+            Log.d("Bluetooth","value = "+value);
+            if(value < 0 ){
+                //Case with no contact at all
+                FluidMechanics.buttonReleased();
+                isTangiblePressed = false ;
             }
+            else{
+                if(fluidSettings.controlType == PRESSURE_CONTROL || fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
 
-            value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
+                    if(value < MINPRESSURE)     value = MINPRESSURE ;
+                    if(value > MAXPRESSURE)     value = MAXPRESSURE ;
+                    if(fluidSettings.controlType == PRESSURE_CONTROL){
+                        value = MAXPRESSURE - value ;
+                    }
 
-            float tmp = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,2);
+                    value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
 
-            Log.d("TESTPRESS","Tmp value = "+tmp+" value = "+value);
+                    float tmp = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,2);
 
-            //Have to use int
-            final int step = 1;
-            final int max = (int)MAXPRECISION * 100;
-            final int min = (int)MINPRECISION * 100;
-            final int initialValue = max ;
-            final double initialPosition = (double)max ;
-            final int valueInt = (int) (value * 100) ;
+                    Log.d("TESTPRESS","Tmp value = "+tmp+" value = "+value);
 
-            final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
+                    //Have to use int
+                    final int step = 1;
+                    final int max = (int)MAXPRECISION * 100;
+                    final int min = (int)MINPRECISION * 100;
+                    final int initialValue = max ;
+                    final double initialPosition = (double)max ;
+                    final int valueInt = (int) (value * 100) ;
 
-            sliderPrecision.setMax( (max - min) / step );
-            sliderPrecision.setProgress(valueInt);
-            sliderPrecision.setMax( (max - min) / step );
-            Log.d("Bluetooth ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" ;;;; Max - Min = "+(max-min)+" ;;;;;Value  Slider = "+(max-valueInt));
+                    final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
 
-            final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
-            sliderTooltipPrecision.setVisibility(View.INVISIBLE);
-            sliderTooltipPrecision.setText(""+value);
+                    sliderPrecision.setMax( (max - min) / step );
+                    sliderPrecision.setProgress(valueInt);
+                    sliderPrecision.setMax( (max - min) / step );
+                    Log.d("Bluetooth ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" ;;;; Max - Min = "+(max-min)+" ;;;;;Value  Slider = "+(max-valueInt));
 
-            fluidSettings.precision = value;
-            updateDataSettings();
+                    final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
+                    sliderTooltipPrecision.setVisibility(View.INVISIBLE);
+                    sliderTooltipPrecision.setText(""+value);
 
-        }
+                    fluidSettings.precision = value;
+                    updateDataSettings();
+                }
+                
+                FluidMechanics.buttonPressed();
+                requestRender();
+                isTangiblePressed = true ;
+
+            }
+            
+        //}
         
     }
 
