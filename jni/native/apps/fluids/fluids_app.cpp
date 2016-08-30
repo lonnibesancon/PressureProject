@@ -478,6 +478,7 @@ void FluidMechanics::Impl::reset(){
 	centerRot = currentDataRot ;
 	directionMov = Vector3::zero();
 	logNumber = 0 ;
+	nbSeconds = TIME/1000000 ;
 
 	setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400)),Matrix4::makeTransform(Vector3(0, 0, 400)));
 	
