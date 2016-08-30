@@ -179,7 +179,15 @@
                       android:layout_height="60dp"
                       android:layout_width="120dp"
                       android:layout_alignParentRight="true"
-                      android:text="Reset"/>   
+                      android:text="Reset"/> 
+
+                  <Button
+                      android:id="@+id/egoBtn"
+                      android:layout_gravity="left|bottom"
+                      android:layout_height="60dp"
+                      android:layout_width="120dp"
+                      android:layout_alignParentRight="true"
+                      android:text="Allo"/>  
 
 
               </GridLayout>

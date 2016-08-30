@@ -94,6 +94,8 @@ extern "C" {
     //Initialize everything to call a java function
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_initJNI(JNIEnv* env, jobject obj);
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
+    JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isEgo(JNIEnv* env, jobject obj, jboolean ego);
+    JNIEXPORT int JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getTime(JNIEnv* env, jobject obj);
 
 }
 
@@ -115,6 +117,7 @@ jmethodID javaMethodRef;
 JNIEnv* env ;
 jobject obj ;
 static JavaVM* g_jvm = 0;
+int nbSeconds = TIME/1000000 ;
 
 
 // See http://stackoverflow.com/questions/14650885/how-to-create-timer-events-using-c-11
@@ -301,6 +304,9 @@ struct FluidMechanics::Impl
 
 	bool buttonIsPressed;
 
+	bool ego = false ;
+	void isEgo(bool ego);
+
 
 	//Trial Handling
 	void launchTrial();
@@ -364,12 +370,12 @@ void FluidMechanics::Impl::launchTrial(){
 	isOver = false ;
 	interactionMode = dataTangible ;
 	reset();
-	participant.clearVectors();
+	//participant.clearVectors();
 	participant.logging(true);	
 	std::thread timerTrial(&FluidMechanics::Impl::endTrial,this);
+	//std::thread timerLog(&FluidMechanics::Impl::log,this);
+	//timerLog.detach();
 	timerTrial.detach();
-	std::thread timerLog(&FluidMechanics::Impl::log,this);
-	timerLog.detach();
 	//main is blocked until funcTest1 is not finished
 	//timerTrial.join();
 }
@@ -392,19 +398,27 @@ void FluidMechanics::Impl::timer(){
 }
 
 void FluidMechanics::Impl::endTrial(){
-	usleep(TIME);
-	LOGD("Trial End");
-	
+	int nbSteps = TIME/TIMELOG ;
+	for(int i = 0 ; i < nbSteps ; i++){
+		std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(50));
+		participant.addData(currentDataPos, currentDataRot, settings->precision, logNumber);
+		logNumber++ ;
+		if(i % 20 == 0){
+			nbSeconds -- ;	
+		}
+
+	}
+	participant.addData(currentDataPos, currentDataRot, settings->precision, logNumber);
+	isOver = true ;
 	reset();
-	//std::thread pLog(&Participant::resetTrial,participant);
-	//pLog.join();
 	participant.resetTrial();
 	settings->controlType = participant.getCondition();
-	isOver = true ;
 	interactionMode = 0 ; 
-	
-	//Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
 	return ;
+}
+
+void FluidMechanics::Impl::isEgo(bool b){
+	ego = b ;
 }
 
 void FluidMechanics::Impl::log(){
@@ -1015,6 +1029,10 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		//trans.z *= -1 ;
 		trans *= settings->precision ;
 
+		if(ego){
+			trans *= -1 ;	
+		}
+
 		//To constrain interaction
 		
 		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
@@ -1085,6 +1103,11 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 
 			
+			if(ego){
+				rz *= -1 ;
+				ry *= -1 ;
+				rx *= -1 ;
+			}
 			//if(settings->controlType == RATE_CONTROL_SIMPLE ){
 
 			if(settings->isTraining == false){
@@ -2260,6 +2283,36 @@ JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_hasFinishedLog(JNIE
 
 }
 
+JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isEgo(JNIEnv* env, jobject obj, jboolean ego){
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		instance->isEgo(ego);
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+}
+
+JNIEXPORT int JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getTime(JNIEnv* env, jobject obj){
+	if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+	if (App::getType() != App::APP_TYPE_FLUID)
+		throw std::runtime_error("Wrong application type");
+
+	return nbSeconds;
+
+}
+
 
 
 FluidMechanics::FluidMechanics(const InitParams& params)
@@ -2368,6 +2421,10 @@ bool FluidMechanics::hasFinishedLog(){
 
 int FluidMechanics::getCondition(){
 	return impl->getCondition();
+}
+
+void FluidMechanics::isEgo(bool b){
+	impl->isEgo(b);
 }
 /*
 void FluidMechanics::initJNI(){

@@ -61,4 +61,6 @@ public class FluidMechanics {
     public static native void initJNI();
     public static native boolean hasFinishedLog();
     public static native int getCondition();
+    public static native int getTime();
+    public static native void isEgo(boolean b);
 }

@@ -31,6 +31,7 @@ public:
 	void setPId(int p);
 	bool hasFinishedLog();
 	int getCondition();
+	void isEgo(bool b);
 
     std::string getData();
 

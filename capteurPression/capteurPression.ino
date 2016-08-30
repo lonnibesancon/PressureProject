@@ -7,9 +7,9 @@ char ble_buf[20];
 bool sensorHDActivated = false ;
 bool sensorHGActivated = false ;
 bool useTwoSensors = true ;
-float valueMax = 700 ;
+float valueMax = 650 ;
 
-int threshold = 15 ;
+int threshold = 40 ;
 
 float toSend = 0;
 
@@ -49,7 +49,7 @@ void setup() {
 void loop() {
   toSend = 0.0 ;
   // Échantillonnage de l'émission en ms
-  RFduino_ULPDelay(0.1);
+  RFduino_ULPDelay(0.5);
   //RFduino_ULPDelay(1000);
   
   int sensorValueDroit = analogRead(SFR_DROIT);

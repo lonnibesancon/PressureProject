@@ -252,8 +252,10 @@ public class MainActivity extends BaseARActivity
 
     //Training part
     private Button endTrainingBtn ;
-    
     private Button resetBtn ;
+    private boolean isEgo = false ;
+    private Button egoBtn ;
+    private boolean isPopUp = false ;
 
     @Override
     protected int getAppType() {
@@ -328,7 +330,7 @@ public class MainActivity extends BaseARActivity
 
     public void showAlerts(){
         //When it's done
-
+        isPopUp = true ;
         if( trialNumber == 4*NBTRIALS ){
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Thanks for your participation");
@@ -450,6 +452,7 @@ public class MainActivity extends BaseARActivity
         public void onClick(DialogInterface dialog, int whichButton) {
         launchTrial();
             mAlertVisible = false ; // So that we'll display the next alert when the trial is Over
+            isPopUp = false ;
             return ;   
           
           }
@@ -609,6 +612,21 @@ public class MainActivity extends BaseARActivity
             public void onClick(View view){
                 Log.d("End Training","End Training clicked");
                 alertBeforeEndOfTraining();
+            } 
+        });
+
+        egoBtn = (Button) findViewById(R.id.egoBtn);
+        this.egoBtn.setOnClickListener(new OnClickListener(){
+            @Override
+            public void onClick(View view){
+                isEgo=!isEgo;
+                if(isEgo){
+                    egoBtn.setText("Ego");
+                }
+                else{
+                    egoBtn.setText("Allo");
+                }
+                FluidMechanics.isEgo(isEgo);
             } 
         });
 
@@ -1888,6 +1906,10 @@ public class MainActivity extends BaseARActivity
 
     private void getData(byte[] data) {
 
+        if(isPopUp || mAlertVisible){
+            Log.d("TrialLaunched","PopUPVISIBLE");
+            return ; //To avoid the bug of the technique not changing
+        }
         Log.d("Bluetooth","test");
 
         Log.d("Bluetooth", "Control Type = "+fluidSettings.controlType);
@@ -1904,30 +1926,31 @@ public class MainActivity extends BaseARActivity
 
                     if(value < MINPRESSURE)     value = MINPRESSURE ;
                     if(value > MAXPRESSURE)     value = MAXPRESSURE ;
-                    if(fluidSettings.controlType == PRESSURE_CONTROL){
-                        value = MAXPRESSURE - value ;
-                    }
-
-                    value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
-
-                    float tmp = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,2);
-
-                    Log.d("TESTPRESS","Tmp value = "+tmp+" value = "+value);
 
                     //Have to use int
                     final int step = 1;
-                    final int max = (int)MAXPRECISION * 100;
-                    final int min = (int)MINPRECISION * 100;
+                    final int max = (int)(MAXPRECISION * 100);
+                    final int min = (int)(MINPRECISION * 100);
                     final int initialValue = max ;
                     final double initialPosition = (double)max ;
-                    final int valueInt = (int) (value * 100) ;
+                    final int valueInt ;
+                    if(fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
+                        value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
+                        valueInt = (int) (value * 100) - min; //Because the slider cannot be set at something else than 0    
+                    }
+                    else{
+                        value = Utils.convertIntoNewRange(MAXPRECISION,MINPRECISION,MINPRESSURE,MAXPRESSURE,value);
+                        //value = MAXPRESSURE - value ;
+                        valueInt = (int) (value * 100) - min;
+                    }
 
                     final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
 
                     sliderPrecision.setMax( (max - min) / step );
-                    sliderPrecision.setProgress(valueInt);
+                    sliderPrecision.customSetProgress(valueInt);
                     sliderPrecision.setMax( (max - min) / step );
-                    Log.d("Bluetooth ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" ;;;; Max - Min = "+(max-min)+" ;;;;;Value  Slider = "+(max-valueInt));
+                    //Log.d("Bluetooth ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" ;;;; Max - Min = "+(max-min)+" ;;;;;Value  Slider = "+(max-valueInt));
+                    Log.d("ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" Min = "+min );
 
                     final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
                     sliderTooltipPrecision.setVisibility(View.INVISIBLE);
@@ -1960,14 +1983,17 @@ public class MainActivity extends BaseARActivity
     }
 
     private void setStateOverlay(){
-        String connectionText = "Disconnected";
-        if (state == STATE_CONNECTING) {
+
+        String timeText = ""+FluidMechanics.getTime();
+        /*if (state == STATE_CONNECTING) {
             connectionText = "Connecting...";
         } else if (state == STATE_CONNECTED) {
             connectionText = "Connected";
         }
-        bluetoothOverlay.setText(connectionText);
+        */
+        bluetoothOverlay.setText(timeText);
     }
+
 
 
 
