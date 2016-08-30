@@ -32,8 +32,8 @@
 #define velocity	4
 
 
-#define RATE_CONTROL				1
-#define RATE_CONTROL_SIMPLE			11
+#define RATE_CONTROL				11
+#define RATE_CONTROL_SIMPLE			1
 #define SPEED_CONTROL				2
 #define PRESSURE_CONTROL			31
 #define PRESSURE_CONTROL_REVERSE 	3

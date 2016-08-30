@@ -242,8 +242,8 @@ public class MainActivity extends BaseARActivity
 
 
     final private static short NO_CONTROL               = 0 ;
-    final private static short RATE_CONTROL             = 1 ;
-    final private static short RATE_CONTROL_SIMPLE      = 11 ;
+    final private static short RATE_CONTROL             = 11 ;
+    final private static short RATE_CONTROL_SIMPLE      = 1 ;
     final private static short SPEED_CONTROL            = 2 ;
     final private static short PRESSURE_CONTROL         = 31 ;
     final private static short PRESSURE_CONTROL_REVERSE = 3 ;
@@ -1383,7 +1383,8 @@ public class MainActivity extends BaseARActivity
             case R.id.action_ratecontrol:
                 item.setChecked(!item.isChecked());
                 if(item.isChecked()){
-                    changeControlType(RATE_CONTROL);
+                    //changeControlType(RATE_CONTROL);
+                    changeControlType(RATE_CONTROL_SIMPLE);
                 }
                 break;
 
