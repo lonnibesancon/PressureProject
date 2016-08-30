@@ -256,6 +256,7 @@ public class MainActivity extends BaseARActivity
     private boolean isEgo = false ;
     private Button egoBtn ;
     private boolean isPopUp = false ;
+    private boolean trialStarted = false ;
 
     @Override
     protected int getAppType() {
@@ -394,6 +395,7 @@ public class MainActivity extends BaseARActivity
         FluidMechanics.launchTrial();
         trialNumber ++ ; 
         Log.d("TrialNumber",""+trialNumber);
+        trialStarted = true ;
     }
 
     public void endTrial(){
@@ -1705,7 +1707,7 @@ public class MainActivity extends BaseARActivity
             //loggingFunction(); 
             if(FluidMechanics.isTrialOver() && !mAlertVisible && idRegistered ){ 
                 //The last one is here to prevent the dialogs from showing up first
-                
+                trialStarted = false ;
                 mAlertVisible = true;
                 /*while(FluidMechanics.hasFinishedLog() == false ){
                             try{
