@@ -245,8 +245,8 @@ public class MainActivity extends BaseARActivity
     final private static short RATE_CONTROL             = 1 ;
     final private static short RATE_CONTROL_SIMPLE      = 11 ;
     final private static short SPEED_CONTROL            = 2 ;
-    final private static short PRESSURE_CONTROL         = 3 ;
-    final private static short PRESSURE_CONTROL_REVERSE = 31 ;
+    final private static short PRESSURE_CONTROL         = 31 ;
+    final private static short PRESSURE_CONTROL_REVERSE = 3 ;
     final private static short SLIDER_CONTROL           = 4 ;
 
 
