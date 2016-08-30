@@ -445,7 +445,7 @@ public class MainActivity extends BaseARActivity
 
     public void alertBeforeTrial(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-        alert.setTitle("Next Trial");
+        alert.setTitle("Next Trial # "+trialNumber);
         alert.setMessage("Click ok when you're ready for the next trial");
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -1696,6 +1696,9 @@ public class MainActivity extends BaseARActivity
    public void requestRender(){
         if (mView != null){
             Log.d(TAG,"RequestRender");
+            if(trialStarted){
+                setStateOverlay();    
+            }
             mView.requestRender();
             //client.setData(FluidMechanics.getData());
             //Log.d(TAG,"Request Render");
