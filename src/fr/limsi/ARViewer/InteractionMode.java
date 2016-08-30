@@ -48,7 +48,7 @@ public interface InteractionMode{
 	public static final float MAXPRESSURE 	= 2 ;
 	public static final float MINPRESSURE	= 0.01f ;
 
-	public static final int NBTRIALS	= 15 ;
+	public static final int NBTRIALS	= 20 ;
 
 	public static final boolean TRAINING = false ;
 

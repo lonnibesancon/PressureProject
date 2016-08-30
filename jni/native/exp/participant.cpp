@@ -221,7 +221,7 @@ void Participant::resetTrial(){
 	currentTargetID ++ ;
 	LOGD("LOGWRITING has been done and currentTargetID has been increased and equals %d", currentTargetID);
 	if(currentTargetID%NBTRIALS == 0){
-		LOGD("LOG Changed condition");
+		LOGD("ChangedCondition");
 		resetCondition();
 	}
 	logWritten = true ;

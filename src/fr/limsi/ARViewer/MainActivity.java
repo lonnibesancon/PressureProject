@@ -289,7 +289,7 @@ public class MainActivity extends BaseARActivity
                     FluidMechanics.setPId(p);
                     openFile();
                     idRegistered = true ;
-                    showAlerts();
+                    //showAlerts();
                 }
             }
             
@@ -447,7 +447,7 @@ public class MainActivity extends BaseARActivity
 
     public void alertBeforeTrial(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-        alert.setTitle("Next Trial # "+trialNumber);
+        alert.setTitle("Next Trial # "+trialNumber%NBTRIALS);
         alert.setMessage("Click ok when you're ready for the next trial");
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
