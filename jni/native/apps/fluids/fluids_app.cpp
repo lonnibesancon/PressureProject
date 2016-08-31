@@ -356,6 +356,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	
 	targetId = 0 ;
 	directory = baseDir +"/";
+
 }
 
 void FluidMechanics::Impl::initJNI(){
@@ -698,13 +699,16 @@ Vector3 FluidMechanics::Impl::particleJitter()
 
 void FluidMechanics::Impl::buttonPressed()
 {
-	tangoEnabled = true ;
-
 	LOGD("BUTTON PRESSED");
-	centerPos = currentDataPos ;
-	centerRot = currentDataRot ;
-	tabRot = currentDataRot ;
-	tabPos = currentDataPos ;
+	if(tangoEnabled == false){
+		tangoEnabled = true ;
+
+		centerPos = currentDataPos ;
+		centerRot = currentDataRot ;
+		tabRot = currentDataRot ;
+		tabPos = currentDataPos ;
+	}
+	
 
 	//For the rate control we have to memorize the initial position to be able to compute
 	//The precision factor
@@ -714,10 +718,13 @@ void FluidMechanics::Impl::buttonPressed()
 
 float FluidMechanics::Impl::buttonReleased()
 {
-	tangoEnabled = false ;
 	LOGD("BUTTON RELEASED");
-	centerPos = currentDataPos ;
-	centerRot = currentDataRot ;
+	if(tangoEnabled == true){
+		tangoEnabled = false ;
+		centerPos = currentDataPos ;
+		centerRot = currentDataRot ;
+	}
+	
 
 	return 0 ;
 }
@@ -1015,6 +1022,8 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		return ;
 	}
 
+	settings->controlType = SPEED_CONTROL ;
+
 	Vector3 vec(tx,ty,tz);
 
 	if(tangoEnabled){
@@ -1028,14 +1037,64 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		trans *= Vector3(1,-1,-1);	//Tango... -_-"
 		trans *= 300 ;
 		//trans.z *= -1 ;
-		trans *= settings->precision ;
 
 		if(ego){
 			trans *= -1 ;	
 		}
 
 		//To constrain interaction
+
+		if(settings->controlType == SPEED_CONTROL){
+					computeEucli();
+					trans*=eucli ;
+					currentDataPos +=trans ;
+
+
+					prevVec = vec ;
+					return ;
+				}
+
+		if(settings->controlType == RATE_CONTROL_SIMPLE){
+		//if(participant.getCondition() == RATE_CONTROL_SIMPLE){
+			tabPos+=trans ;
+			Vector3 coordinateCorrection(1,-1,-1);
+			Vector3 diff = (tabPos-centerRot.inverse()*centerPos) ;
+			printAny(diff,"RATE_CONTROL BEFORE");
+			diff.x = convertIntoNewRange(0,100, diff.x);
+			diff.y = convertIntoNewRange(0,100, diff.y);
+			diff.z = convertIntoNewRange(0,100, diff.z);
+			//currentDataPos = (centerRot.inverse()*coordinateCorrection * diff * 0.005) + currentDataPos ;
+			currentDataPos = (diff * 0.005) + currentDataPos ;
+			printAny(diff,"RATE_CONTROL");
+			LOGD("RATE_CONTROL_SIMPLE");
+			return ;
+		}
+
+			if(settings->controlType == RATE_CONTROL){
+				//if(participant.getCondition() == RATE_CONTROL){
+					tabPos+=trans ;
+					Vector3 diff = tabPos-centerPos ;
+					diff.x = abs(diff.x);
+					diff.y = abs(diff.y);
+					diff.z = abs(diff.z);
+					printAny(tabPos,"POSTAB");
+					printAny(centerPos,"POSCENTER");
+					printAny(diff,"RATE_CONTROL BEFORE");
+					diff.x = convertIntoNewRange(0,50, diff.x);
+					diff.y = convertIntoNewRange(0,50, diff.y);
+					diff.z = convertIntoNewRange(0,50, diff.z);
+					currentDataPos += trans * diff;
+					printAny(diff,"RATE_CONTROL");
+
+
+
+					prevVec = vec ;
+					return ;
+			}
 		
+
+
+		// END TESTING 
 		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
 		{
 
@@ -1052,9 +1111,10 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 					tabPos+=trans ;
 					Vector3 coordinateCorrection(1,-1,-1);
 					currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.05) + currentDataPos ;
+					LOGD("RATE_CONTROL_SIMPLE");
 				}
-				//if(settings->controlType == RATE_CONTROL){
-				if(participant.getCondition() == RATE_CONTROL){
+				if(settings->controlType == RATE_CONTROL){
+				//if(participant.getCondition() == RATE_CONTROL){
 					tabPos+=trans ;
 					Vector3 diff = tabPos-centerPos ;
 					diff.x = abs(diff.x);
@@ -1064,6 +1124,11 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 					diff.y = convertIntoNewRange(0, 100, diff.y);
 					diff.z = convertIntoNewRange(0, 100, diff.z);
 					currentDataPos += trans * diff ;
+					LOGD("RATE_CONTROL");
+				}
+				if(participant.getCondition() == PRESSURE_CONTROL_REVERSE){
+					trans *= settings->precision ;
+					currentDataPos +=trans ;	
 				}
 				else{
 				currentDataPos +=trans ;
@@ -1086,17 +1151,75 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 	if(!data){
 		return ;
 	}
-
-	if(settings->considerX == 0 || settings->considerZ == 0 || settings->considerY == 0){
-		return ;
-	}
-
-	rz *=settings->precision * (teta) ;
-	ry *=settings->precision * (teta) ;
-	rx *=settings->precision * (teta) ;
+	
 	if(tangoEnabled){
+
+
+		if(settings->controlType == RATE_CONTROL_SIMPLE ){
+			Quaternion rot = currentDataRot;
+			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
+			tabRot = rot ;//* tabRot ;
+			currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+			return ;
+		}
+
+		if(settings->controlType == SPEED_CONTROL){
+				rz *= teta ;
+				ry *= teta ;
+				rx *= teta ;
+
+
+				Quaternion rot = currentDataRot;
+				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
+
+				currentDataRot = rot;
+				computeAngular();
+				
+				return ;
+			}
+
+		if(settings->controlType == RATE_CONTROL){
+		//if(participant.getCondition() == RATE_CONTROL_SIMPLE){
+			Quaternion rot = currentDataRot;
+			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
+
+			tabRot = rot ;//* tabRot ;
+			//currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+			Quaternion diff = centerRot.inverse() * rot ;
+			Vector3 diffAngles ;
+			diffAngles.x = diff.x /sqrt(1-diff.w*diff.w);
+			diffAngles.y = diff.y /sqrt(1-diff.w*diff.w);
+			diffAngles.z = diff.z /sqrt(1-diff.w*diff.w);
+			printAny(diffAngles,"ANGLES");
+			return ;
+		}
+
 		if(interactionMode == dataTangible || interactionMode == dataTouchTangible)
 		{
+
+			if(ego){
+				rz *= -1 ;
+				ry *= -1 ;
+				rx *= -1 ;
+			}
+
+
+			if(participant.getCondition() == PRESSURE_CONTROL_REVERSE){
+				rz *=settings->precision ;
+				ry *=settings->precision ;
+				rx *=settings->precision ;
+			}
+			else if(participant.getCondition() == SPEED_CONTROL){
+				rz *= teta ;
+				ry *= teta ;
+				rx *= teta ;
+			}
 			
 			Quaternion rot = currentDataRot;
 			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
@@ -1104,23 +1227,13 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 
 			
-			if(ego){
-				rz *= -1 ;
-				ry *= -1 ;
-				rx *= -1 ;
-			}
+			
 			//if(settings->controlType == RATE_CONTROL_SIMPLE ){
 
-			if(settings->isTraining == false){
 
-				if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
-					tabRot = rot ;//* tabRot ;
-					currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
-				}
-
-				else{
-					currentDataRot = rot;	
-				}
+			if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
+				tabRot = rot ;//* tabRot ;
+				currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
 			}
 			else{
 				currentDataRot = rot;	
@@ -1146,12 +1259,12 @@ void FluidMechanics::Impl::computeAngular(){
 	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
 
 
-	//if(settings->controlType == SPEED_CONTROL ){
-	if(participant.getCondition() == SPEED_CONTROL ){
+	if(settings->controlType == SPEED_CONTROL ){
+	//if(participant.getCondition() == SPEED_CONTROL ){
 		directionRot = currentDataRot * previousRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 		
-
+		LOGD("ANGULAR TMP = %f",tmp);
 		if(tmp < MINANGULAR)		tmp = MINANGULAR ;
 		if(tmp > MAXANGULAR)		tmp = MAXANGULAR ;
 
@@ -1215,8 +1328,8 @@ void FluidMechanics::Impl::computeAngular(){
 
 void FluidMechanics::Impl::computeEucli(){
 
-	//if(settings->controlType == SPEED_CONTROL){
-	if(participant.getCondition() == SPEED_CONTROL){
+	if(settings->controlType == SPEED_CONTROL){
+	//if(participant.getCondition() == SPEED_CONTROL){
 		float tmp = euclideandist(currentDataPos, previousPos);
 		if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
 		if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
@@ -1255,6 +1368,7 @@ void FluidMechanics::Impl::computeEucli(){
 
 		eucli = 1 ;
 	}
+	previousPos = currentDataPos ;
 	
 }
 
