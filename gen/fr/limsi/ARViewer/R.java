@@ -50,13 +50,13 @@ public final class R {
         public static final int cameraPreview=0x7f080001;
         public static final int change_IP=0x7f080025;
         public static final int egoBtn=0x7f08000f;
-        public static final int endTrainingBtn=0x7f08000d;
+        public static final int endTrainingBtn=0x7f08000e;
         public static final int glSurfaceView=0x7f080000;
         public static final int linearlayout2=0x7f080007;
         public static final int linearlayout3=0x7f080008;
         public static final int linearlayout4=0x7f080010;
         public static final int linearlayout5=0x7f080011;
-        public static final int resetBtn=0x7f08000e;
+        public static final int resetBtn=0x7f08000d;
         public static final int seekbar_dialog_seekbar=0x7f080013;
         public static final int seekbar_dialog_text=0x7f080012;
         public static final int sliderTooltip=0x7f080002;

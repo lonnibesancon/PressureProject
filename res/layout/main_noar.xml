@@ -164,14 +164,6 @@
                       android:layout_alignParentRight="true"
                       android:textOn="Tactile On"
                       android:textOff="Tactile Off" />
-                 
-                  <Button
-                      android:id="@+id/endTrainingBtn"
-                      android:layout_gravity="left|bottom"
-                      android:layout_height="60dp"
-                      android:layout_width="120dp"
-                      android:layout_alignParentRight="true"
-                      android:text="EndTraining"/>   
 
                   <Button
                       android:id="@+id/resetBtn"
@@ -180,6 +172,14 @@
                       android:layout_width="120dp"
                       android:layout_alignParentRight="true"
                       android:text="Reset"/> 
+                 
+                  <Button
+                      android:id="@+id/endTrainingBtn"
+                      android:layout_gravity="left|bottom"
+                      android:layout_height="60dp"
+                      android:layout_width="120dp"
+                      android:layout_alignParentRight="true"
+                      android:text="EndTraining"/>   
 
                   <Button
                       android:id="@+id/egoBtn"

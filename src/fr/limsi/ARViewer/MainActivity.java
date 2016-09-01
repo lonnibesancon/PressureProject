@@ -396,6 +396,18 @@ public class MainActivity extends BaseARActivity
         trialNumber ++ ; 
         Log.d("TrialNumber",""+trialNumber);
         trialStarted = true ;
+
+        //We need to randomize this a bit otherwise people don't use it
+        if(trialNumber%2==0){
+            setSliderValue(MINPRECISION) ;  
+            fluidSettings.precision = MINPRECISION ;  
+        }
+        else{
+            setSliderValue(MAXPRECISION);
+            fluidSettings.precision = MAXPRECISION ;
+        }
+        updateDataSettings();
+        requestRender();
     }
 
     public void endTrial(){
@@ -428,7 +440,7 @@ public class MainActivity extends BaseARActivity
             updateSettings();
             endTrainingBtn.setVisibility(View.GONE);
             getStartInfo();
-            resetBtn.setVisibility(View.GONE);
+            //resetBtn.setVisibility(View.GONE);
             return ;   
           
           }
@@ -447,7 +459,8 @@ public class MainActivity extends BaseARActivity
 
     public void alertBeforeTrial(){
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-        alert.setTitle("Next Trial # "+trialNumber%NBTRIALS);
+        String techniqueName = getConditionName(fluidSettings.controlType);
+        alert.setTitle("Next Trial # "+trialNumber%NBTRIALS+" "+techniqueName);
         alert.setMessage("Click ok when you're ready for the next trial");
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -490,7 +503,7 @@ public class MainActivity extends BaseARActivity
         FluidMechanics.getState(fluidState);
         fluidSettings.precision = MAXPRECISION ;
         fluidSettings.translatePlane = false ;
-        fluidSettings.controlType = RATE_CONTROL;
+        fluidSettings.controlType = NO_CONTROL;
         fluidSettings.isTraining = true ;
         //fluidSettings.dataORplane = 0 ; //Data 
 
@@ -1442,15 +1455,28 @@ public class MainActivity extends BaseARActivity
         dataORplaneTouch = true ;    //Data
 
         this.nbOfResets += 1 ;
+        int value = -1 ;
 
-        if(this.nbOfResets%2 == 0){
-            fluidSettings.precision = MAXPRECISION ;    
+        if(fluidSettings.isTraining == true){
+            if(this.nbOfResets%2 == 0){
+                fluidSettings.precision = MAXPRECISION ;    
+                setSliderValue(MAXPRECISION);
+            }
+            else{
+                fluidSettings.precision = MINPRECISION ;
+                setSliderValue(MINPRECISION);
+            }
         }
-        else{
-            fluidSettings.precision = MINPRECISION ;
+       
+
+        //Because otherwise can't demonstrate that it's frustrating with 3 and .5
+        if (fluidSettings.isTraining==false){
+            setSliderValue(1);    
         }
+        
         updateDataSettings();
         requestRender();
+
 
     }
 
@@ -1760,11 +1786,14 @@ public class MainActivity extends BaseARActivity
             case SPEED_CONTROL:
                 techniqueName = "Speed control";
                 break;
-            case RATE_CONTROL:
+            case RATE_CONTROL_SIMPLE:
                 techniqueName = "Rate Control";
                 break ;
             case SLIDER_CONTROL:
                 techniqueName = "Slider Control";
+                break ;
+            default:
+                techniqueName = "Unknown" ;
                 break ;
         }
         return techniqueName ;
@@ -1934,24 +1963,20 @@ public class MainActivity extends BaseARActivity
                     if(value > MAXPRESSURE)     value = MAXPRESSURE ;
 
                     //Have to use int
-                    final int step = 1;
-                    final int max = (int)(MAXPRECISION * 100);
-                    final int min = (int)(MINPRECISION * 100);
-                    final int initialValue = max ;
-                    final double initialPosition = (double)max ;
-                    final int valueInt ;
+                   
                     if(fluidSettings.controlType == PRESSURE_CONTROL_REVERSE){
                         value = Utils.convertIntoNewRange(MINPRECISION,MAXPRECISION,MINPRESSURE,MAXPRESSURE,value);
-                        valueInt = (int) (value * 100) - min; //Because the slider cannot be set at something else than 0    
+                        //valueInt = (int) (value * 100) - min; //Because the slider cannot be set at something else than 0    
                     }
                     else{
                         value = Utils.convertIntoNewRange(MAXPRECISION,MINPRECISION,MINPRESSURE,MAXPRESSURE,value);
                         //value = MAXPRESSURE - value ;
-                        valueInt = (int) (value * 100) - min;
+                        //valueInt = (int) (value * 100) - min;
                     }
 
-                    final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
+                    setSliderValue(value);
 
+                    /*final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
                     sliderPrecision.setMax( (max - min) / step );
                     sliderPrecision.customSetProgress(valueInt);
                     sliderPrecision.setMax( (max - min) / step );
@@ -1963,7 +1988,7 @@ public class MainActivity extends BaseARActivity
                     sliderTooltipPrecision.setText(""+value);
 
                     fluidSettings.precision = value;
-                    updateDataSettings();
+                    updateDataSettings();*/
                 }
                 
                 FluidMechanics.buttonPressed();
@@ -1974,6 +1999,31 @@ public class MainActivity extends BaseARActivity
             
         //}
         
+    }
+
+    private void setSliderValue(float value){
+        final int step = 1;
+        final int max = (int)(MAXPRECISION * 100);
+        final int min = (int)(MINPRECISION * 100);
+        final int initialValue = max ;
+        final double initialPosition = (double)max ;
+        final int valueInt ;
+        valueInt = (int) (value * 100) - min;
+
+
+        final VerticalSeekBar sliderPrecision = (VerticalSeekBar)findViewById(R.id.verticalSliderPrecision);
+        sliderPrecision.setMax( (max - min) / step );
+        sliderPrecision.customSetProgress(valueInt);
+        sliderPrecision.setMax( (max - min) / step );
+        //Log.d("Bluetooth ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" ;;;; Max - Min = "+(max-min)+" ;;;;;Value  Slider = "+(max-valueInt));
+        Log.d("ValueSlider","Value = "+value+";;;;;Value Int = "+valueInt+" Min = "+min );
+
+        final TextView sliderTooltipPrecision = (TextView)findViewById(R.id.sliderTooltipPrecision);
+        sliderTooltipPrecision.setVisibility(View.INVISIBLE);
+        sliderTooltipPrecision.setText(""+value);
+
+        fluidSettings.precision = value;
+        updateDataSettings();
     }
 
     @Override
