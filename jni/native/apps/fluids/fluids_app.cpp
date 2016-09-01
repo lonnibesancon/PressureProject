@@ -96,6 +96,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_endTrialJava();
     JNIEXPORT void JNICALL Java_fr_limsi_ARViewer_FluidMechanics_isEgo(JNIEnv* env, jobject obj, jboolean ego);
     JNIEXPORT int JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getTime(JNIEnv* env, jobject obj);
+    JNIEXPORT jfloat JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getValueSlider(JNIEnv* env, jobject obj);
 
 }
 
@@ -193,6 +194,7 @@ struct FluidMechanics::Impl
 	void setPId(int p);
 	bool hasFinishedLog();
 	int getCondition();
+	float getValueSlider();
 
 
 
@@ -321,7 +323,9 @@ struct FluidMechanics::Impl
 	std::string directory ;
 	Matrix4 tm ;
 	Matrix4 targetMatrix = Matrix4::makeTransform(Vector3(34.4052, 20.5995, 100.312), Quaternion(0.17284, -0.127112, 0.982298, -0.0668766));
-
+	Quaternion forSliderQ ;
+	Vector3 forSliderV ;
+	float getMaxComponentofVector(Vector3 v);
 
 };
 
@@ -1154,6 +1158,7 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 				diff.x = convertIntoNewRange(0, 100, diff.x);
 				diff.y = convertIntoNewRange(0, 100, diff.y);
 				diff.z = convertIntoNewRange(0, 100, diff.z);
+				forSliderV = diff ;
 				currentDataPos += trans * diff ;
 				LOGD("RATE_CONTROL");
 			}
@@ -1175,6 +1180,7 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 	prevVec = vec ;
 
 }
+
 
 void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double q){
 	if(!data){
@@ -1307,6 +1313,7 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 				tabRot = rot ;//* tabRot ;
 				//currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
 				currentDataRot = slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.02) *currentDataRot ;
+				forSliderQ = tabRot*centerRot.inverse();
 			}
 			else{
 				Quaternion rot = currentDataRot;
@@ -1321,6 +1328,42 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 		}
 	}
 	
+}
+
+float FluidMechanics::Impl::getValueSlider(){
+	if(participant.getCondition() == SPEED_CONTROL){
+		if(teta > eucli){
+			return teta ;
+		}
+		else{
+			return eucli ;
+		}
+	}
+	else if(participant.getCondition() == RATE_CONTROL){
+		if(forSliderQ.w < 0.0){
+			forSliderQ.w *= -1.0 ;
+		}
+		float angle = 2 * safe_acos(forSliderQ.w);
+		float vector = getMaxComponentofVector(forSliderV);
+		if(angle/120 > vector){
+			return angle ;
+		}
+		else{
+			return vector ;
+		}
+	}
+}
+
+float FluidMechanics::Impl::getMaxComponentofVector(Vector3 v){
+	if(abs(v.x)>= abs(v.y) && abs(v.x) >= abs(v.z)){
+		return v.x ;
+	}
+	else if(abs(v.y)>= abs(v.x) && abs(v.y) >= abs(v.z)){
+		return v.y ;
+	}
+	else{
+		return v.z ;
+	}
 }
 
 
@@ -2498,6 +2541,26 @@ JNIEXPORT int JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getTime(JNIEnv* env,
 
 }
 
+JNIEXPORT jfloat JNICALL Java_fr_limsi_ARViewer_FluidMechanics_getValueSlider(JNIEnv* env, jobject obj){
+	try {
+		// LOGD("(JNI) [FluidMechanics] loadVelocityDataSet()");
+
+		if (!App::getInstance())
+			throw std::runtime_error("init() was not called");
+
+		if (App::getType() != App::APP_TYPE_FLUID)
+			throw std::runtime_error("Wrong application type");
+
+		FluidMechanics* instance = dynamic_cast<FluidMechanics*>(App::getInstance());
+		android_assert(instance);
+		return instance->getValueSlider();
+
+	} catch (const std::exception& e) {
+		throwJavaException(env, e.what());
+	}
+}
+
+
 
 
 FluidMechanics::FluidMechanics(const InitParams& params)
@@ -2538,6 +2601,7 @@ void FluidMechanics::rebind()
 	NativeApp::rebind();
 	impl->rebind();
 }
+
 
 
 void FluidMechanics::setMatrices(const Matrix4& volumeMatrix, const Matrix4& stylusMatrix)
@@ -2610,6 +2674,10 @@ int FluidMechanics::getCondition(){
 
 void FluidMechanics::isEgo(bool b){
 	impl->isEgo(b);
+}
+
+float FluidMechanics::getValueSlider(){
+	return impl->getValueSlider();
 }
 /*
 void FluidMechanics::initJNI(){

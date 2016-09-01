@@ -32,6 +32,7 @@ public:
 	bool hasFinishedLog();
 	int getCondition();
 	void isEgo(bool b);
+	float getValueSlider();
 
     std::string getData();
 

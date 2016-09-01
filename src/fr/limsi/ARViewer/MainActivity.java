@@ -1457,7 +1457,8 @@ public class MainActivity extends BaseARActivity
         this.nbOfResets += 1 ;
         int value = -1 ;
 
-        if(fluidSettings.isTraining == true){
+        if(fluidSettings.isTraining == true || FluidMechanics.getCondition() == SLIDER_CONTROL){
+            Log.d("RESET VALUE","RESET VALUE");
             if(this.nbOfResets%2 == 0){
                 fluidSettings.precision = MAXPRECISION ;    
                 setSliderValue(MAXPRECISION);
@@ -1466,11 +1467,12 @@ public class MainActivity extends BaseARActivity
                 fluidSettings.precision = MINPRECISION ;
                 setSliderValue(MINPRECISION);
             }
+
         }
        
 
         //Because otherwise can't demonstrate that it's frustrating with 3 and .5
-        if (fluidSettings.isTraining==false){
+        if (fluidSettings.isTraining==false && FluidMechanics.getCondition() != SLIDER_CONTROL){
             setSliderValue(1);    
         }
         
@@ -1989,6 +1991,9 @@ public class MainActivity extends BaseARActivity
 
                     fluidSettings.precision = value;
                     updateDataSettings();*/
+                }
+                else if(fluidSettings.controlType == RATE_CONTROL || fluidSettings.controlType == SPEED_CONTROL){
+                    
                 }
                 
                 FluidMechanics.buttonPressed();
