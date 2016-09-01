@@ -113,10 +113,16 @@ void Participant::performLog(){
     	std::string cond = "";
     	switch(conditions[currentConditionID]){
     		case 1:
-    			cond = "pressure_control";
+    			cond = "rate_control";
     			break ;
     		case 2:
-    			cond = "pressure_control_reverse";
+    			cond = "speed_control";
+    			break ;
+    		case 3:
+    			cond = "pressure_control";
+    			break ;
+    		case 4:
+    			cond = "slider_control";
     			break ;
     	}
     	

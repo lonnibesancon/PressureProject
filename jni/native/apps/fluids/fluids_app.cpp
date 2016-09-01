@@ -1252,12 +1252,20 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 				rz *=settings->precision ;
 				ry *=settings->precision ;
 				rx *=settings->precision ;
+				Quaternion rot = tabRot;
+				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 				currentDataRot = rot;
 			}
 			else if(participant.getCondition() == SPEED_CONTROL){
 				rz *= teta ;
 				ry *= teta ;
 				rx *= teta ;
+				Quaternion rot = tabRot;
+				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 				currentDataRot = rot;
 			}
 			
@@ -1296,7 +1304,6 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 
 		}
 
-		//Now for the automatic constraining of interaction
 
 	}
 	
