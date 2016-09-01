@@ -31,9 +31,8 @@
 #define head		3
 #define velocity	4
 
-
-#define RATE_CONTROL				11
 #define RATE_CONTROL_SIMPLE			1
+#define RATE_CONTROL				11
 #define SPEED_CONTROL				2
 #define PRESSURE_CONTROL			31
 #define PRESSURE_CONTROL_REVERSE 	3
@@ -46,11 +45,11 @@
 #define MINEUCLIDEAN		0.01
 //#define MAXEUCLIDEAN		20.0
 //#define MAXEUCLIDEAN		15.0
-#define MAXEUCLIDEAN		10.0
+#define MAXEUCLIDEAN		20.0
 #define MINEUCLIDEANRATE	0.05
 #define MAXEUCLIDEANRATE	30
 
-#define MINANGULAR			0.00005
+#define MINANGULAR			0.00002
 #define MAXANGULAR			0.15
 #define MINANGULARRATE		0.05
 #define MAXANGULARRATE		1.5
@@ -67,8 +66,8 @@
 #else
 #define NBTRIALS 18
 #endif
-
-#define TIME	 2000000
+#define TIME	  4000000
+//#define TIME	  2000000
 //#define TIME	 31000000
 #define TIMELOG 	50000
 #define SLEEPTIME 2000000

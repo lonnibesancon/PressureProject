@@ -1022,7 +1022,7 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		return ;
 	}
 
-	settings->controlType = SPEED_CONTROL ;
+	//settings->controlType = SPEED_CONTROL ;
 
 	Vector3 vec(tx,ty,tz);
 
@@ -1038,23 +1038,9 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		trans *= 300 ;
 		//trans.z *= -1 ;
 
-		if(ego){
-			trans *= -1 ;	
-		}
+		
 
-		//To constrain interaction
-
-		if(settings->controlType == SPEED_CONTROL){
-					computeEucli();
-					trans*=eucli ;
-					currentDataPos +=trans ;
-
-
-					prevVec = vec ;
-					return ;
-				}
-
-		if(settings->controlType == RATE_CONTROL_SIMPLE){
+		/*if(settings->controlType == RATE_CONTROL_SIMPLE){
 		//if(participant.getCondition() == RATE_CONTROL_SIMPLE){
 			tabPos+=trans ;
 			Vector3 coordinateCorrection(1,-1,-1);
@@ -1069,6 +1055,29 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 			LOGD("RATE_CONTROL_SIMPLE");
 			return ;
 		}
+
+		/*
+
+
+		if(settings->controlType == SPEED_CONTROL){
+					computeEucli();
+					trans*=eucli ;
+					currentDataPos +=trans ;
+
+
+					prevVec = vec ;
+					return ;
+				}
+
+				if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
+					trans *= settings->precision ;
+					currentDataPos +=trans ;
+
+					prevVec = vec ;
+					return ;	
+				}
+
+		
 
 			if(settings->controlType == RATE_CONTROL){
 				//if(participant.getCondition() == RATE_CONTROL){
@@ -1094,49 +1103,62 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		
 
 
-		// END TESTING 
+		// END TESTING*/ 
 		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
 		{
+			
+
+			if(ego){
+				trans *= -1 ;	
+			}
+
 
 			//if(settings->controlType == SPEED_CONTROL){
-			if(settings->isTraining == false){
 
-				if(participant.getCondition() == SPEED_CONTROL){
-					computeEucli();
-					trans*=eucli ;
-					currentDataPos +=trans ;
-				}
-				//if(settings->controlType == RATE_CONTROL_SIMPLE){
-				if(participant.getCondition() == RATE_CONTROL_SIMPLE){
-					tabPos+=trans ;
-					Vector3 coordinateCorrection(1,-1,-1);
-					currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.05) + currentDataPos ;
-					LOGD("RATE_CONTROL_SIMPLE");
-				}
-				if(settings->controlType == RATE_CONTROL){
-				//if(participant.getCondition() == RATE_CONTROL){
-					tabPos+=trans ;
-					Vector3 diff = tabPos-centerPos ;
-					diff.x = abs(diff.x);
-					diff.y = abs(diff.y);
-					diff.z = abs(diff.z);
-					diff.x = convertIntoNewRange(0, 100, diff.x);
-					diff.y = convertIntoNewRange(0, 100, diff.y);
-					diff.z = convertIntoNewRange(0, 100, diff.z);
-					currentDataPos += trans * diff ;
-					LOGD("RATE_CONTROL");
-				}
-				if(participant.getCondition() == PRESSURE_CONTROL_REVERSE){
-					trans *= settings->precision ;
-					currentDataPos +=trans ;	
-				}
-				else{
+			if(participant.getCondition() == SPEED_CONTROL){
+				computeEucli();
+				trans*=eucli ;
 				currentDataPos +=trans ;
-				}
+			}
+			//if(settings->controlType == RATE_CONTROL_SIMPLE){
+			else if(participant.getCondition() == RATE_CONTROL_SIMPLE){
+				/*tabPos+=trans ;
+				Vector3 coordinateCorrection(1,-1,-1);
+				currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.04) + currentDataPos ;
+				LOGD("RATE_CONTROL_SIMPLE");*/
+				tabPos+=trans ;
+				Vector3 coordinateCorrection(1,-1,-1);
+				Vector3 diff = (tabPos-/*centerRot.inverse()**/centerPos) ;
+				printAny(diff,"RATE_CONTROL BEFORE");
+				/*diff.x = convertIntoNewRange(1,100, diff.x);
+				diff.y = convertIntoNewRange(1,100, diff.y);
+				diff.z = convertIntoNewRange(1,100, diff.z);*/
+				//currentDataPos = (centerRot.inverse()*coordinateCorrection * diff * 0.005) + currentDataPos ;
+				currentDataPos = (diff * 0.03) + currentDataPos ;
+				printAny(diff,"RATE_CONTROL");
+				LOGD("RATE_CONTROL_SIMPLE");
+			}
+			else if(settings->controlType == RATE_CONTROL){
+			//if(participant.getCondition() == RATE_CONTROL){
+				tabPos+=trans ;
+				Vector3 diff = tabPos-centerPos ;
+				diff.x = abs(diff.x);
+				diff.y = abs(diff.y);
+				diff.z = abs(diff.z);
+				diff.x = convertIntoNewRange(0, 100, diff.x);
+				diff.y = convertIntoNewRange(0, 100, diff.y);
+				diff.z = convertIntoNewRange(0, 100, diff.z);
+				currentDataPos += trans * diff ;
+				LOGD("RATE_CONTROL");
+			}
+			else if(participant.getCondition() == PRESSURE_CONTROL_REVERSE || participant.getCondition() == SLIDER_CONTROL){
+				trans *= settings->precision ;
+				currentDataPos +=trans ;	
 			}
 			else{
-				currentDataPos +=trans ;
+			currentDataPos +=trans ;
 			}
+		
 
 			printAny(currentDataPos, "Data Pos");
 		}
@@ -1155,15 +1177,31 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 	if(tangoEnabled){
 
 
-		if(settings->controlType == RATE_CONTROL_SIMPLE ){
-			Quaternion rot = currentDataRot;
+		/*if(settings->controlType == RATE_CONTROL_SIMPLE ){
+			Quaternion rot = tabRot;
 			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
 			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 			tabRot = rot ;//* tabRot ;
-			currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+			//currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+			currentDataRot = slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.02) *currentDataRot ;
 			return ;
 		}
+
+		/*if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
+				rz *=settings->precision ;
+				ry *=settings->precision ;
+				rx *=settings->precision ;
+
+				Quaternion rot = currentDataRot;
+				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
+
+				currentDataRot = rot;
+				
+				return ;
+			}
 
 		if(settings->controlType == SPEED_CONTROL){
 				rz *= teta ;
@@ -1198,7 +1236,7 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			diffAngles.z = diff.z /sqrt(1-diff.w*diff.w);
 			printAny(diffAngles,"ANGLES");
 			return ;
-		}
+		}*/
 
 		if(interactionMode == dataTangible || interactionMode == dataTouchTangible)
 		{
@@ -1210,32 +1248,43 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			}
 
 
-			if(participant.getCondition() == PRESSURE_CONTROL_REVERSE){
+			if(participant.getCondition() == PRESSURE_CONTROL_REVERSE || participant.getCondition() == SLIDER_CONTROL){
 				rz *=settings->precision ;
 				ry *=settings->precision ;
 				rx *=settings->precision ;
+				currentDataRot = rot;
 			}
 			else if(participant.getCondition() == SPEED_CONTROL){
 				rz *= teta ;
 				ry *= teta ;
 				rx *= teta ;
+				currentDataRot = rot;
 			}
 			
-			Quaternion rot = currentDataRot;
+			/*Quaternion rot = currentDataRot;
 			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
 			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
-			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
+			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);*/
 
 			
 			
 			//if(settings->controlType == RATE_CONTROL_SIMPLE ){
 
 
-			if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
+			else if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
+				Quaternion rot = tabRot;
+				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 				tabRot = rot ;//* tabRot ;
-				currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+				//currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
+				currentDataRot = slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.02) *currentDataRot ;
 			}
 			else{
+				Quaternion rot = currentDataRot;
+				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
+				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
+				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 				currentDataRot = rot;	
 			}
 			
