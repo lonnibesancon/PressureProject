@@ -53,6 +53,9 @@
 #include <cstdio>
 
 
+//#define XP
+
+
 
 #include <vtkXMLPolyDataReader.h>
 
@@ -1138,9 +1141,14 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
 		{
 
-			//if(settings->controlType == SPEED_CONTROL){
 
+#ifndef XP
+			if(settings->controlType == SPEED_CONTROL){
+				LOGD("Control Type --- Speed Control");
+#else
 			if(participant.getCondition() == SPEED_CONTROL){
+				LOGD("Participant Type --- Speed Control");
+#endif 
 				if(ego){
 					trans *= -1 ;	
 				}
@@ -1148,8 +1156,13 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 				trans*=eucli ;
 				currentDataPos +=trans ;
 			}
-			//if(settings->controlType == RATE_CONTROL_SIMPLE){
+#ifndef XP
+			else if(settings->controlType == RATE_CONTROL_SIMPLE){
+				LOGD("Control Type --- Rate Control Simple");
+#else
 			else if(participant.getCondition() == RATE_CONTROL_SIMPLE){
+				LOGD("Participant Type --- Rate Control Simple");
+#endif 
 				/*tabPos+=trans ;
 				Vector3 coordinateCorrection(1,-1,-1);
 				currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.04) + currentDataPos ;
@@ -1170,8 +1183,15 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 				forSliderV = diff ;
 				LOGD("RATE_CONTROL_SIMPLE");
 			}
+
+
+#ifndef XP
 			else if(settings->controlType == RATE_CONTROL){
-			//if(participant.getCondition() == RATE_CONTROL){
+				LOGD("Control Type --- Rate Control");
+#else
+			else if(participant.getCondition() == RATE_CONTROL){
+				LOGD("Participant Type --- Rate Control");
+#endif
 				tabPos+=trans ;
 				Vector3 diff = tabPos-centerPos ;
 				diff.x = abs(diff.x);
@@ -1183,7 +1203,14 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 				currentDataPos += trans * diff ;
 				LOGD("RATE_CONTROL");
 			}
+
+#ifndef XP
+			else if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
+				LOGD("Control Type --- Pressure or Slider");
+#else
 			else if(participant.getCondition() == PRESSURE_CONTROL_REVERSE || participant.getCondition() == SLIDER_CONTROL){
+				LOGD("Participant Type --- Pressure or Slider");
+#endif
 				if(ego){
 					trans *= -1 ;	
 				}
@@ -1305,8 +1332,11 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 				rx *= -1 ;
 			}
 
-
+#ifndef XP
+			if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
+#else
 			if(participant.getCondition() == PRESSURE_CONTROL_REVERSE || participant.getCondition() == SLIDER_CONTROL){
+#endif
 				rz *=settings->precision ;
 				ry *=settings->precision ;
 				rx *=settings->precision ;
@@ -1316,7 +1346,12 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 				rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);
 				currentDataRot = rot;
 			}
+
+#ifndef XP
+			else if(settings->controlType == SPEED_CONTROL){
+#else
 			else if(participant.getCondition() == SPEED_CONTROL){
+#endif
 				rz *= teta ;
 				ry *= teta ;
 				rx *= teta ;
@@ -1334,11 +1369,11 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			rot = rot * Quaternion(rot.inverse() * Vector3::unitX(), rx);*/
 
 			
-			
-			//if(settings->controlType == RATE_CONTROL_SIMPLE ){
-
-
+#ifndef XP			
+			else if(settings->controlType == RATE_CONTROL_SIMPLE ){
+#else
 			else if(participant.getCondition() == RATE_CONTROL_SIMPLE ){
+#endif
 				Quaternion rot = tabRot;
 				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
 				rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
@@ -1348,6 +1383,7 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 				currentDataRot = slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.02) *currentDataRot ;
 				forSliderQ = tabRot*centerRot.inverse();
 			}
+
 			else{
 				Quaternion rot = currentDataRot;
 				rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
@@ -1364,8 +1400,11 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 }
 
 float FluidMechanics::Impl::getValueSlider(){
+#ifndef XP
+	if(settings->controlType == SPEED_CONTROL){
+#else
 	if(participant.getCondition() == SPEED_CONTROL){
-	//if(settings->controlType == SPEED_CONTROL){
+#endif
 		if(teta > eucli){
 			LOGD("VALUESLIDER: TETA is bigger + %f", teta);
 
@@ -1376,8 +1415,12 @@ float FluidMechanics::Impl::getValueSlider(){
 			return eucli ;
 		}
 	}
+#ifndef XP
+	else if(settings->controlType== RATE_CONTROL_SIMPLE){
+#else
 	else if(participant.getCondition() == RATE_CONTROL_SIMPLE){
-	//else if(settings->controlType== RATE_CONTROL_SIMPLE){
+#endif
+	
 		if(forSliderQ.w < 0.0){
 			forSliderQ.w *= -1.0 ;
 		}
@@ -1417,9 +1460,11 @@ float FluidMechanics::Impl::getMaxComponentofVector(Vector3 v){
 void FluidMechanics::Impl::computeAngular(){
 	//See http://lost-found-wandering.blogspot.fr/2011/09/revisiting-angular-velocity-from-two.html
 
-
-	//if(settings->controlType == SPEED_CONTROL ){
+#ifndef XP
+	if(settings->controlType == SPEED_CONTROL ){
+#else
 	if(participant.getCondition() == SPEED_CONTROL ){
+#endif
 		directionRot = currentDataRot * previousRot.inverse();
 		float tmp = 2 * safe_acos(directionRot.w);
 		
@@ -1486,9 +1531,11 @@ void FluidMechanics::Impl::computeAngular(){
 }
 
 void FluidMechanics::Impl::computeEucli(){
-
-	//if(settings->controlType == SPEED_CONTROL){
+#ifndef XP
+	if(settings->controlType == SPEED_CONTROL){
+#else
 	if(participant.getCondition() == SPEED_CONTROL){
+#endif
 		float tmp = euclideandist(currentDataPos, previousPos);
 		if(tmp < MINEUCLIDEAN)	tmp = MINEUCLIDEAN ;	
 		if(tmp > MAXEUCLIDEAN)	tmp = MAXEUCLIDEAN ;
@@ -1999,7 +2046,10 @@ void FluidMechanics::Impl::renderObjects()
 				glDisable(GL_CULL_FACE);
 				bunny->render(proj, mm);
 
+
+	#ifdef XP
 				bunnytarget->renderTarget(proj,tm);
+	#endif
 			}
 		}
 
