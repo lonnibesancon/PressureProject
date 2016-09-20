@@ -62,6 +62,6 @@ public class FluidMechanics {
     public static native boolean hasFinishedLog();
     public static native int getCondition();
     public static native int getTime();
-    public static native float getValuesSlider();
+    public static native float getValueSlider();
     public static native void isEgo(boolean b);
 }

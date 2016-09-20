@@ -1189,9 +1189,9 @@ public class MainActivity extends BaseARActivity
                     if(fluidSettings.controlType == SLIDER_CONTROL){
                         sliderTooltipPrecision.setVisibility(View.INVISIBLE);
                         if (mProgress != -1) {
-                            // Log.d(TAG, "setSurfaceValue " + mProgress);
-                            fluidSettings.precision = (float)mProgress;
-                            updateDataSettings();
+                            Log.d(TAG, "setSurfaceValue " + mProgress);
+                            //fluidSettings.precision = (float)mProgress;
+                            //updateDataSettings();
                             mProgress = -1;
                         }
                     }
@@ -1992,8 +1992,9 @@ public class MainActivity extends BaseARActivity
                     fluidSettings.precision = value;
                     updateDataSettings();*/
                 }
-                else if(fluidSettings.controlType == RATE_CONTROL || fluidSettings.controlType == SPEED_CONTROL){
-                    
+                else if(fluidSettings.controlType == RATE_CONTROL_SIMPLE || fluidSettings.controlType == SPEED_CONTROL){
+                    float value = FluidMechanics.getValueSlider();
+                    setSliderValue(value);
                 }
                 
                 FluidMechanics.buttonPressed();

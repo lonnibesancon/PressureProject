@@ -1043,6 +1043,9 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		//trans.z *= -1 ;
 
 		if(settings->controlType == NO_CONTROL){
+			if(ego){
+				trans *= -1 ;	
+			}
 			trans *= settings->precision ;
 			currentDataPos +=trans ;	
 			printAny(settings->precision,"NO_CONTROL");
@@ -1052,21 +1055,38 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 
 		/*if(settings->controlType == RATE_CONTROL_SIMPLE){
 		//if(participant.getCondition() == RATE_CONTROL_SIMPLE){
-			tabPos+=trans ;
+			/*tabPos+=trans ;
 			Vector3 coordinateCorrection(1,-1,-1);
 			Vector3 diff = (tabPos-centerRot.inverse()*centerPos) ;
 			printAny(diff,"RATE_CONTROL BEFORE");
-			diff.x = convertIntoNewRange(0,100, diff.x);
+			/*diff.x = convertIntoNewRange(0,100, diff.x);
 			diff.y = convertIntoNewRange(0,100, diff.y);
 			diff.z = convertIntoNewRange(0,100, diff.z);
 			//currentDataPos = (centerRot.inverse()*coordinateCorrection * diff * 0.005) + currentDataPos ;
-			currentDataPos = (diff * 0.005) + currentDataPos ;
+			currentDataPos = (diff * 0.02) + currentDataPos ;
 			printAny(diff,"RATE_CONTROL");
 			LOGD("RATE_CONTROL_SIMPLE");
+			forSliderV = diff ;*/
+			/*tabPos+=trans ;
+			Vector3 coordinateCorrection(1,-1,-1);
+			currentDataPos = (centerRot.inverse()*coordinateCorrection * (tabPos-centerPos) * 0.04) + currentDataPos ;
+			LOGD("RATE_CONTROL_SIMPLE");*/
+			tabPos+=trans ;
+			Vector3 coordinateCorrection(1,-1,-1);
+			Vector3 diff = (tabPos-/*centerRot.inverse()**/centerPos) ;
+			printAny(diff,"RATE_CONTROL BEFORE");
+			/*diff.x = convertIntoNewRange(1,100, diff.x);
+			diff.y = convertIntoNewRange(1,100, diff.y);
+			diff.z = convertIntoNewRange(1,100, diff.z);
+			//currentDataPos = (centerRot.inverse()*coordinateCorrection * diff * 0.005) + currentDataPos ;
+			currentDataPos = (diff * 0.02) + currentDataPos ;
+			forSliderV = diff ;
+			LOGD("RATE_CONTROL_SIMPLE");
+			prevVec = vec ;
 			return ;
 		}
 
-		/*
+		
 
 
 		if(settings->controlType == SPEED_CONTROL){
@@ -1077,15 +1097,16 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 
 					prevVec = vec ;
 					return ;
-				}
+		}
 
-				if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
-					trans *= settings->precision ;
-					currentDataPos +=trans ;
+		if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
+			LOGD("SLIDERORPRESSURE %f",settings->precision) ;
+			trans *= settings->precision ;
+			currentDataPos +=trans ;
 
-					prevVec = vec ;
-					return ;	
-				}
+			prevVec = vec ;
+			return ;	
+		}
 
 		
 
@@ -1116,16 +1137,13 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 		// END TESTING*/ 
 		if( interactionMode == dataTangible || interactionMode == dataTouchTangible )
 		{
-			
-
-			if(ego){
-				trans *= -1 ;	
-			}
-
 
 			//if(settings->controlType == SPEED_CONTROL){
 
 			if(participant.getCondition() == SPEED_CONTROL){
+				if(ego){
+					trans *= -1 ;	
+				}
 				computeEucli();
 				trans*=eucli ;
 				currentDataPos +=trans ;
@@ -1138,14 +1156,18 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 				LOGD("RATE_CONTROL_SIMPLE");*/
 				tabPos+=trans ;
 				Vector3 coordinateCorrection(1,-1,-1);
+				
 				Vector3 diff = (tabPos-/*centerRot.inverse()**/centerPos) ;
+				if(ego){
+					diff *= -1 ;
+				}
 				printAny(diff,"RATE_CONTROL BEFORE");
 				/*diff.x = convertIntoNewRange(1,100, diff.x);
 				diff.y = convertIntoNewRange(1,100, diff.y);
 				diff.z = convertIntoNewRange(1,100, diff.z);*/
 				//currentDataPos = (centerRot.inverse()*coordinateCorrection * diff * 0.005) + currentDataPos ;
 				currentDataPos = (diff * 0.02) + currentDataPos ;
-				printAny(diff,"RATE_CONTROL");
+				forSliderV = diff ;
 				LOGD("RATE_CONTROL_SIMPLE");
 			}
 			else if(settings->controlType == RATE_CONTROL){
@@ -1158,11 +1180,13 @@ void FluidMechanics::Impl::setTangoValues(double tx, double ty, double tz, doubl
 				diff.x = convertIntoNewRange(0, 100, diff.x);
 				diff.y = convertIntoNewRange(0, 100, diff.y);
 				diff.z = convertIntoNewRange(0, 100, diff.z);
-				forSliderV = diff ;
 				currentDataPos += trans * diff ;
 				LOGD("RATE_CONTROL");
 			}
 			else if(participant.getCondition() == PRESSURE_CONTROL_REVERSE || participant.getCondition() == SLIDER_CONTROL){
+				if(ego){
+					trans *= -1 ;	
+				}
 				printAny(settings->precision, "PRECISIONVALUE");
 				trans *= settings->precision ;
 				currentDataPos +=trans ;	
@@ -1194,6 +1218,12 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			ry *=settings->precision ;
 			rx *=settings->precision ;
 
+			if(ego){
+				rz *= -1 ;
+				ry *= -1 ;
+				rx *= -1 ;
+			}
+
 			Quaternion rot = currentDataRot;
 			rot = rot * Quaternion(rot.inverse() * (-Vector3::unitZ()), rz);
 			rot = rot * Quaternion(rot.inverse() * -Vector3::unitY(), ry);
@@ -1210,10 +1240,11 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			tabRot = rot ;//* tabRot ;
 			//currentDataRot = centerRot.inverse() * slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.08) * centerRot *currentDataRot ;
 			currentDataRot = slerp(Quaternion::identity(),(tabRot*centerRot.inverse()),0.02) *currentDataRot ;
+			forSliderQ = tabRot*centerRot.inverse();
 			return ;
 		}
 
-		/*if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
+		if(settings->controlType == PRESSURE_CONTROL_REVERSE || settings->controlType == SLIDER_CONTROL){
 				rz *=settings->precision ;
 				ry *=settings->precision ;
 				rx *=settings->precision ;
@@ -1261,7 +1292,9 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 			diffAngles.z = diff.z /sqrt(1-diff.w*diff.w);
 			printAny(diffAngles,"ANGLES");
 			return ;
-		}*/
+		}
+
+		//END TRAINING*/
 
 		if(interactionMode == dataTangible || interactionMode == dataTouchTangible)
 		{
@@ -1332,36 +1365,49 @@ void FluidMechanics::Impl::setGyroValues(double rx, double ry, double rz, double
 
 float FluidMechanics::Impl::getValueSlider(){
 	if(participant.getCondition() == SPEED_CONTROL){
+	//if(settings->controlType == SPEED_CONTROL){
 		if(teta > eucli){
+			LOGD("VALUESLIDER: TETA is bigger + %f", teta);
+
 			return teta ;
 		}
 		else{
+			LOGD("VALUESLIDER: EUCLI is bigger + %f", eucli);
 			return eucli ;
 		}
 	}
-	else if(participant.getCondition() == RATE_CONTROL){
+	else if(participant.getCondition() == RATE_CONTROL_SIMPLE){
+	//else if(settings->controlType== RATE_CONTROL_SIMPLE){
 		if(forSliderQ.w < 0.0){
 			forSliderQ.w *= -1.0 ;
 		}
 		float angle = 2 * safe_acos(forSliderQ.w);
+		angle = angle * 180/3.14159 ;
 		float vector = getMaxComponentofVector(forSliderV);
-		if(angle/120 > vector){
+		if(angle/120 > abs(vector)){
+			LOGD("VALUESLIDER: ANGLE is bigger + %f", angle);
 			return angle ;
 		}
 		else{
-			return vector ;
+			LOGD("VALUESLIDER: Vector is bigger + %f", vector);
+			vector = convertIntoNewRange(0, 100, abs(vector));
+
+			return vector;
 		}
 	}
 }
 
 float FluidMechanics::Impl::getMaxComponentofVector(Vector3 v){
 	if(abs(v.x)>= abs(v.y) && abs(v.x) >= abs(v.z)){
+		LOGD("VALUESLIDER: Biggest value is v.x = %f",v.x);
 		return v.x ;
 	}
 	else if(abs(v.y)>= abs(v.x) && abs(v.y) >= abs(v.z)){
+		LOGD("VALUESLIDER: Biggest value is v.y = %f",v.y);
 		return v.y ;
 	}
 	else{
+		LOGD("VALUESLIDER: Biggest value is v.z = %f",v.z);
 		return v.z ;
 	}
 }
